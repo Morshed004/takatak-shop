@@ -135,29 +135,7 @@ export default function HomePage() {
             তাকাটাক<span className="text-primary">.</span>
           </Link>
 
-          <div className="relative hidden flex-1 md:block">
-            <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              className="h-11 pl-10"
-              placeholder="পণ্য, ব্র্যান্ড বা ক্যাটাগরি খুঁজুন"
-            />
-          </div>
-
           <div className="ml-auto flex items-center gap-1">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="md:hidden"
-              aria-label="খুঁজুন"
-            >
-              <Search />
-            </Button>
-            <Button variant="ghost" size="icon" aria-label="উইশলিস্ট">
-              <Heart />
-            </Button>
-            <Button variant="ghost" size="icon" aria-label="অ্যাকাউন্ট">
-              <User />
-            </Button>
             <Link href={"/carts"}>
               <Button
                 variant="outline"
