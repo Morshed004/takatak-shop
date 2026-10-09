@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import {
-  Star, Heart, Share2, ShoppingCart, Minus, Plus, Truck, RotateCcw,
-  ShieldCheck, Banknote, MessageCircle, ChevronRight, ImageIcon, Check,
+  Heart, Share2, Minus, Plus, Truck, RotateCcw,
+  ShieldCheck, Banknote, ChevronRight, ImageIcon, Check, ArrowRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -12,47 +13,74 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-/* ---------- Dummy data (replace with DB / API using params.slug) ---------- */
-const product = {
-  name: "পুরুষদের প্রিমিয়াম কটন পাঞ্জাবি",
-  category: "ফ্যাশন",
-  sku: "PNJ-204",
-  price: 1450,
-  old: 1990,
-  rating: 4.7,
-  reviews: 328,
-  sold: 1240,
-  stock: 12,
-  colors: [
-    { name: "অফ হোয়াইট", value: "#efeadf" },
-    { name: "নেভি ব্লু", value: "#1f2a44" },
-    { name: "মেরুন", value: "#6b1f2a" },
+/* ---------- API Types ---------- */
+interface Variant {
+  color?: string | null;
+  size?: string | null;
+  inStock: boolean;
+}
+
+interface MinimumSellingPrice {
+  customerPaysDelivery: number;
+  resellerPaysDeliveryInsideDhaka: number;
+  resellerPaysDeliveryOutsideDhaka: number;
+}
+
+interface Product {
+  id: string;
+  name: string;
+  description: string;
+  images: string[];
+  suggestedPrice: number;
+  costPrice: number;
+  packagingCost: number;
+  minimumSellingPrice: MinimumSellingPrice;
+  inStock: boolean;
+  variants: Variant[];
+}
+
+interface ApiResponse {
+  data: Product[];
+  deliveryCharges: {
+    insideDhaka: number;
+    outsideDhaka: number;
+  };
+}
+
+/* ---------- Dummy API Response Data ---------- */
+const apiData: ApiResponse = {
+  data: [
+    {
+      id: "prod-101",
+      name: "পুরুষদের প্রিমিয়াম কটন পাঞ্জাবি",
+      description:
+        "১০০% খাঁটি কটন ফেব্রিক দিয়ে তৈরি। গরমে অত্যন্ত আরামদায়ক এবং যেকোনো উৎসব বা অনুষ্ঠানে পরার জন্য মানানসই। এতে রয়েছে সূক্ষ্ম ফিনিশিং ও প্রিমিয়াম লুকিং স্টিচ যা আপনাকে দেবে চমৎকার একটি আভিজাত্য।",
+      images: [
+        "https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?w=600&auto=format&fit=crop&q=80",
+        "https://images.unsplash.com/photo-1598033129183-c4f50c736f10?w=600&auto=format&fit=crop&q=80",
+      ],
+      suggestedPrice: 1200,
+      costPrice: 380,
+      packagingCost: 25,
+      minimumSellingPrice: {
+        customerPaysDelivery: 405,
+        resellerPaysDeliveryInsideDhaka: 475,
+        resellerPaysDeliveryOutsideDhaka: 535,
+      },
+      inStock: true,
+      variants: [
+        { color: "Black", size: "M", inStock: true },
+        { color: "Black", size: "L", inStock: true },
+        { color: "Navy Blue", size: "L", inStock: false },
+        { color: "Off White", size: "XL", inStock: true },
+      ],
+    },
   ],
-  sizes: ["M", "L", "XL", "XXL"],
-  highlights: [
-    "১০০% খাঁটি কটন, গরমে আরামদায়ক",
-    "হাতে করা সুতার এমব্রয়ডারি",
-    "ঈদ ও বিয়ের অনুষ্ঠানে মানানসই",
-    "প্রথম ধোয়ায় রং উঠবে না",
-  ],
-  specs: [
-    ["ফেব্রিক", "কটন (১০০%)"],
-    ["ফিটিং", "রেগুলার ফিট"],
-    ["হাতা", "ফুল স্লিভ"],
-    ["ধোয়ার নিয়ম", "হালকা ঠান্ডা পানিতে হাতে ধোয়া ভালো"],
-    ["উৎপাদন", "বাংলাদেশ"],
-  ],
+  deliveryCharges: {
+    insideDhaka: 70,
+    outsideDhaka: 130,
+  },
 };
-
-const ratingBars = [
-  { star: 5, pct: 76 }, { star: 4, pct: 16 }, { star: 3, pct: 5 }, { star: 2, pct: 2 }, { star: 1, pct: 1 },
-];
-
-const reviews = [
-  { name: "রাফিউল ইসলাম", city: "ঢাকা", rating: 5, date: "১২ মার্চ", text: "কাপড়ের মান অসাধারণ, ছবির সাথে হুবহু মিল। সাইজ ঠিকঠাক এসেছে।" },
-  { name: "তানভীর আহমেদ", city: "চট্টগ্রাম", rating: 4, date: "৮ মার্চ", text: "৩ দিনে ডেলিভারি পেয়েছি। প্যাকেজিং ভালো ছিল, রং একটু হালকা মনে হয়েছে।" },
-  { name: "সাজ্জাদ হোসেন", city: "সিলেট", rating: 5, date: "২ মার্চ", text: "ঈদের জন্য নিয়েছিলাম, সবাই প্রশংসা করেছে। আবার অর্ডার করব।" },
-];
 
 const related = [
   { name: "এমব্রয়ডারি পাঞ্জাবি", price: 1790 },
@@ -64,273 +92,288 @@ const related = [
 const bn = (n: number) => n.toLocaleString("bn-BD");
 const taka = (n: number) => `৳${bn(n)}`;
 
-/* ---------- Page ---------- */
 export default function ProductPage() {
-  const [active, setActive] = useState(0);
-  const [color, setColor] = useState(0);
-  const [size, setSize] = useState<string | null>(null);
+  const product = apiData.data[0];
+  const deliveryCharges = apiData.deliveryCharges;
+
+  const [activeImg, setActiveImg] = useState(0);
   const [qty, setQty] = useState(1);
   const [zone, setZone] = useState<"inside" | "outside">("inside");
   const [wished, setWished] = useState(false);
 
-  const off = Math.round(((product.old - product.price) / product.old) * 100);
-  const shipping = zone === "inside" ? 60 : 120;
+  // Extract Unique Colors and Sizes
+  const availableColors = Array.from(
+    new Set(product.variants.map((v) => v.color).filter(Boolean))
+  ) as string[];
+
+  const availableSizes = Array.from(
+    new Set(product.variants.map((v) => v.size).filter(Boolean))
+  ) as string[];
+
+  const [selectedColor, setSelectedColor] = useState<string | null>(
+    availableColors[0] || null
+  );
+  const [selectedSize, setSelectedSize] = useState<string | null>(
+    availableSizes[0] || null
+  );
+
+  const shipping =
+    zone === "inside" ? deliveryCharges.insideDhaka : deliveryCharges.outsideDhaka;
 
   return (
     <main className="mx-auto max-w-7xl px-4 pb-28 pt-6 lg:pb-16">
       {/* Breadcrumb */}
-      <nav aria-label="breadcrumb" className="mb-5 flex items-center gap-1.5 text-sm text-muted-foreground">
-        <Link href="/" className="hover:text-foreground">হোম</Link>
+      <nav aria-label="breadcrumb" className="mb-6 flex items-center gap-2 text-sm text-muted-foreground">
+        <Link href="/" className="transition hover:text-foreground">হোম</Link>
         <ChevronRight className="size-3.5" />
-        <Link href="#" className="hover:text-foreground">{product.category}</Link>
-        <ChevronRight className="size-3.5" />
-        <span className="line-clamp-1 text-foreground">{product.name}</span>
+        <span className="line-clamp-1 font-medium text-foreground">{product.name}</span>
       </nav>
 
       <div className="grid gap-8 lg:grid-cols-2 lg:gap-12">
-        {/* ---------- Gallery ---------- */}
+        {/* ---------- Image Gallery ---------- */}
         <div className="flex flex-col-reverse gap-3 md:flex-row">
-          <div className="flex gap-3 md:flex-col">
-            {[0, 1, 2, 3].map((i) => (
-              <button
-                key={i}
-                onClick={() => setActive(i)}
-                aria-label={`ছবি ${bn(i + 1)}`}
-                className={`flex size-16 shrink-0 items-center justify-center rounded-lg bg-muted transition md:size-20 ${
-                  active === i ? "ring-2 ring-primary" : "opacity-70 hover:opacity-100"
-                }`}
-              >
-                <ImageIcon className="size-5 text-muted-foreground" />
-              </button>
-            ))}
-          </div>
+          {product.images.length > 1 && (
+            <div className="flex gap-3 md:flex-col">
+              {product.images.map((img, i) => (
+                <button
+                  key={i}
+                  onClick={() => setActiveImg(i)}
+                  aria-label={`ছবি ${bn(i + 1)}`}
+                  className={`relative flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-xl border bg-muted transition ${
+                    activeImg === i ? "border-primary ring-2 ring-primary/20" : "opacity-70 hover:opacity-100"
+                  }`}
+                >
+                  <Image src={img} alt={`Thumbnail ${i + 1}`} fill className="object-cover" />
+                </button>
+              ))}
+            </div>
+          )}
 
-          <div className="relative flex aspect-square flex-1 items-center justify-center overflow-hidden rounded-xl bg-muted">
-            {/* Replace with: <Image src={images[active]} alt={product.name} fill className="object-cover" priority /> */}
-            <ImageIcon className="size-16 text-muted-foreground/40" />
-            <Badge className="absolute left-4 top-4 text-sm">-{bn(off)}%</Badge>
+          <div className="relative flex aspect-square flex-1 items-center justify-center overflow-hidden rounded-2xl border bg-muted/30 shadow-sm">
+            {product.images && product.images.length > 0 ? (
+              <Image
+                src={product.images[activeImg] || product.images[0]}
+                alt={product.name}
+                fill
+                className="object-cover transition-all duration-300 hover:scale-105"
+                priority
+              />
+            ) : (
+              <ImageIcon className="size-16 text-muted-foreground/40" />
+            )}
+
+            {!product.inStock ? (
+              <Badge variant="destructive" className="absolute left-4 top-4 text-xs font-semibold uppercase">
+                স্টক আউট
+              </Badge>
+            ) : (
+              <Badge className="absolute left-4 top-4 bg-emerald-600 hover:bg-emerald-700 text-xs font-medium">
+                স্টকে আছে
+              </Badge>
+            )}
+
             <div className="absolute right-4 top-4 flex flex-col gap-2">
               <Button
-                size="icon" variant="secondary" className="rounded-full"
-                aria-label="উইশলিস্ট" onClick={() => setWished(!wished)}
+                size="icon"
+                variant="secondary"
+                className="size-9 rounded-full shadow-md backdrop-blur-sm"
+                aria-label="উইশলিস্ট"
+                onClick={() => setWished(!wished)}
               >
-                <Heart className={wished ? "fill-primary text-primary" : ""} />
+                <Heart className={`size-4 ${wished ? "fill-destructive text-destructive" : ""}`} />
               </Button>
-              <Button size="icon" variant="secondary" className="rounded-full" aria-label="শেয়ার"><Share2 /></Button>
+              <Button size="icon" variant="secondary" className="size-9 rounded-full shadow-md backdrop-blur-sm" aria-label="শেয়ার">
+                <Share2 className="size-4" />
+              </Button>
             </div>
           </div>
         </div>
 
-        {/* ---------- Buy box ---------- */}
-        <div>
-          <h1 className="text-2xl font-bold leading-snug md:text-3xl">{product.name}</h1>
+        {/* ---------- Product Info & Checkout Box ---------- */}
+        <div className="flex flex-col justify-center">
+          <span className="text-xs font-mono tracking-wider text-muted-foreground">পণ্য আইডি: #{product.id}</span>
+          <h1 className="mt-1 text-2xl font-bold leading-tight tracking-tight md:text-3xl lg:text-4xl">{product.name}</h1>
 
-          <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
-            <span className="flex items-center gap-1">
-              <Star className="size-4 fill-current text-foreground" />
-              <span className="font-semibold text-foreground">{bn(product.rating)}</span>
-              ({bn(product.reviews)} রিভিউ)
-            </span>
-            <span>{bn(product.sold)}+ বিক্রি হয়েছে</span>
-            <span>কোড: {product.sku}</span>
+          {/* Pricing Highlight Box */}
+          <div className="mt-5 rounded-2xl border bg-linear-to-br from-muted/50 to-muted/10 p-5 shadow-sm">
+            <div className="flex items-baseline gap-2">
+              <span className="text-4xl font-extrabold text-foreground">{taka(product.suggestedPrice)}</span>
+              <span className="text-sm font-medium text-muted-foreground">/ প্রতি পিস</span>
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">ক্যাশ অন ডেলিভারি সুবিধা প্রদান করা হয়</p>
           </div>
 
-          <div className="mt-5 flex flex-wrap items-baseline gap-3">
-            <span className="text-4xl font-bold">{taka(product.price)}</span>
-            <span className="text-lg text-muted-foreground line-through">{taka(product.old)}</span>
-            <Badge variant="secondary">আপনার সাশ্রয় {taka(product.old - product.price)}</Badge>
-          </div>
+          {/* Variant Selectors */}
+          <div className="mt-6 space-y-5">
+            {/* Color Selector */}
+            {availableColors.length > 0 && (
+              <div>
+                <p className="mb-2.5 text-sm font-semibold">
+                  রং সিলেক্ট করুন: <span className="font-normal text-muted-foreground">{selectedColor}</span>
+                </p>
+                <div className="flex flex-wrap gap-2.5">
+                  {availableColors.map((col) => (
+                    <button
+                      key={col}
+                      onClick={() => setSelectedColor(col)}
+                      className={`flex items-center gap-1.5 rounded-lg border px-3.5 py-1.5 text-sm font-medium transition ${
+                        selectedColor === col
+                          ? "border-primary bg-primary/10 text-primary ring-1 ring-primary"
+                          : "border-input hover:bg-muted/50"
+                      }`}
+                    >
+                      {selectedColor === col && <Check className="size-3.5" />}
+                      {col}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
-          <Separator className="my-6" />
+            {/* Size Selector */}
+            {availableSizes.length > 0 && (
+              <div>
+                <p className="mb-2.5 text-sm font-semibold">
+                  সাইজ সিলেক্ট করুন: <span className="font-normal text-muted-foreground">{selectedSize}</span>
+                </p>
+                <div className="flex flex-wrap gap-2.5">
+                  {availableSizes.map((s) => (
+                    <button
+                      key={s}
+                      onClick={() => setSelectedSize(s)}
+                      className={`min-w-12 rounded-lg border py-1.5 text-center text-sm font-semibold transition ${
+                        selectedSize === s
+                          ? "border-primary bg-primary text-primary-foreground shadow-sm"
+                          : "border-input hover:bg-muted/50"
+                      }`}
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
-          {/* Color */}
-          <div>
-            <p className="mb-3 text-sm font-medium">রং: <span className="text-muted-foreground">{product.colors[color].name}</span></p>
-            <div className="flex gap-3">
-              {product.colors.map((c, i) => (
-                <button
-                  key={c.name}
-                  onClick={() => setColor(i)}
-                  aria-label={c.name}
-                  style={{ backgroundColor: c.value }}
-                  className={`flex size-10 items-center justify-center rounded-full border transition ${
-                    color === i ? "ring-2 ring-primary ring-offset-2 ring-offset-background" : ""
-                  }`}
-                >
-                  {color === i && <Check className="size-4 text-white mix-blend-difference" />}
-                </button>
-              ))}
+            {/* Quantity Controller */}
+            <div>
+              <p className="mb-2.5 text-sm font-semibold">পরিমাণ</p>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center rounded-xl border bg-background p-1 shadow-sm">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="size-8 rounded-lg"
+                    onClick={() => setQty(Math.max(1, qty - 1))}
+                    disabled={!product.inStock}
+                  >
+                    <Minus className="size-3.5" />
+                  </Button>
+                  <span className="w-10 text-center text-sm font-semibold tabular-nums">{bn(qty)}</span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="size-8 rounded-lg"
+                    onClick={() => setQty(qty + 1)}
+                    disabled={!product.inStock}
+                  >
+                    <Plus className="size-3.5" />
+                  </Button>
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* Size */}
-          <div className="mt-6">
-            <div className="mb-3 flex items-center justify-between">
-              <p className="text-sm font-medium">সাইজ</p>
-              <button className="text-sm text-primary hover:underline">সাইজ চার্ট</button>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {product.sizes.map((s) => (
-                <Button
-                  key={s}
-                  variant={size === s ? "default" : "outline"}
-                  className="min-w-14"
-                  onClick={() => setSize(s)}
-                >
-                  {s}
-                </Button>
-              ))}
-            </div>
+          {/* Direct Buy CTA */}
+          <div className="mt-8">
+            <Button
+              size="lg"
+              className="h-13 w-full rounded-xl bg-primary text-base font-semibold shadow-lg transition-all hover:shadow-xl hover:opacity-95"
+              disabled={!product.inStock}
+            >
+              এখনই অর্ডার করুন
+              <ArrowRight className="ml-2 size-5" />
+            </Button>
           </div>
 
-          {/* Quantity + stock */}
-          <div className="mt-6 flex flex-wrap items-center gap-4">
-            <div className="flex items-center rounded-md border">
-              <Button variant="ghost" size="icon" aria-label="কমান" onClick={() => setQty(Math.max(1, qty - 1))}><Minus /></Button>
-              <span className="w-10 text-center font-medium tabular-nums">{bn(qty)}</span>
-              <Button variant="ghost" size="icon" aria-label="বাড়ান" onClick={() => setQty(Math.min(product.stock, qty + 1))}><Plus /></Button>
-            </div>
-            <p className="text-sm font-medium text-primary">মাত্র {bn(product.stock)}টি স্টকে আছে</p>
-          </div>
+          {/* Delivery & Guarantees */}
+          <Card className="mt-6 overflow-hidden border-muted bg-card">
+            <CardContent className="p-5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="rounded-lg bg-primary/10 p-2 text-primary">
+                    <Truck className="size-4" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold">ডেলিভারি এলাকা</p>
+                    <p className="text-xs text-muted-foreground">চার্জ বেছে নিন</p>
+                  </div>
+                </div>
 
-          {/* CTA (desktop) */}
-          <div className="mt-7 hidden gap-3 sm:flex">
-            <Button size="lg" variant="outline" className="flex-1"><ShoppingCart /> কার্টে যোগ করুন</Button>
-            <Button size="lg" className="flex-1">এখনই অর্ডার করুন</Button>
-          </div>
-          {!size && <p className="mt-2 hidden text-xs text-muted-foreground sm:block">অর্ডারের আগে সাইজ বেছে নিন</p>}
-
-          <Button variant="outline" className="mt-3 w-full">
-            <MessageCircle /> হোয়াটসঅ্যাপে অর্ডার বা প্রশ্ন করুন
-          </Button>
-
-          {/* Delivery */}
-          <Card className="mt-6 gap-0 py-0">
-            <CardContent className="space-y-4 p-5">
-              <div className="flex items-center justify-between gap-3">
-                <p className="flex items-center gap-2 text-sm font-medium"><Truck className="size-4" /> ডেলিভারি</p>
-                <div className="flex rounded-md border p-0.5 text-sm">
-                  {[["inside", "ঢাকার ভেতরে"], ["outside", "ঢাকার বাইরে"]].map(([k, l]) => (
+                <div className="flex rounded-lg border bg-muted/30 p-1">
+                  {[
+                    ["inside", "ঢাকা শহর"],
+                    ["outside", "ঢাকার বাইরে"],
+                  ].map(([k, l]) => (
                     <button
                       key={k}
                       onClick={() => setZone(k as "inside" | "outside")}
-                      className={`rounded px-3 py-1.5 transition ${zone === k ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
+                      className={`rounded-md px-3 py-1 text-xs font-medium transition ${
+                        zone === k
+                          ? "bg-background text-foreground shadow-sm"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
                     >
                       {l}
                     </button>
                   ))}
                 </div>
               </div>
-              <p className="text-sm text-muted-foreground">
-                {zone === "inside" ? "১–২ কার্যদিবসে পৌঁছাবে" : "৩–৫ কার্যদিবসে পৌঁছাবে"} · ডেলিভারি চার্জ{" "}
-                <span className="font-semibold text-foreground">{taka(shipping)}</span>
-              </p>
-              <Separator />
-              <ul className="grid gap-3 text-sm sm:grid-cols-2">
-                <li className="flex items-center gap-2"><Banknote className="size-4 text-primary" /> ক্যাশ অন ডেলিভারি</li>
-                <li className="flex items-center gap-2"><RotateCcw className="size-4 text-primary" /> ৭ দিনে রিটার্ন</li>
-                <li className="flex items-center gap-2"><ShieldCheck className="size-4 text-primary" /> ১০০% অরিজিনাল</li>
-                <li className="flex items-center gap-2"><Check className="size-4 text-primary" /> বিকাশ / নগদ পেমেন্ট</li>
-              </ul>
+
+              <div className="mt-3 rounded-lg bg-muted/40 p-3 text-xs text-muted-foreground">
+                শিপিং চার্জ: <span className="font-bold text-foreground">{taka(shipping)}</span>
+              </div>
+
+              <Separator className="my-4" />
+
+              <div className="grid grid-cols-2 gap-3 text-xs font-medium text-muted-foreground">
+                <div className="flex items-center gap-2"><Banknote className="size-4 text-emerald-600" /> ক্যাশ অন ডেলিভারি</div>
+                <div className="flex items-center gap-2"><RotateCcw className="size-4 text-emerald-600" /> ৭ দিনে রিটার্ন সুবিধা</div>
+                <div className="flex items-center gap-2"><ShieldCheck className="size-4 text-emerald-600" /> ১০০% অরিজিনাল প্রোডাক্ট</div>
+                <div className="flex items-center gap-2"><Check className="size-4 text-emerald-600" /> কোয়ালিটি গ্যারান্টি</div>
+              </div>
             </CardContent>
           </Card>
         </div>
       </div>
 
-      {/* ---------- Tabs ---------- */}
-      <Tabs defaultValue="desc" className="mt-14">
-        <TabsList>
-          <TabsTrigger value="desc">বিবরণ</TabsTrigger>
-          <TabsTrigger value="specs">স্পেসিফিকেশন</TabsTrigger>
-          <TabsTrigger value="reviews">রিভিউ ({bn(product.reviews)})</TabsTrigger>
+      {/* ---------- Description Tabs ---------- */}
+      <Tabs defaultValue="desc" className="mt-12">
+        <TabsList className="bg-transparent p-0 border-b w-full justify-start rounded-none h-auto gap-6">
+          <TabsTrigger
+            value="desc"
+            className="border-b-2 border-transparent px-1 pb-3 pt-0 rounded-none data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none font-bold text-base"
+          >
+            পণ্যের বিবরণ
+          </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="desc" className="mt-6 max-w-2xl">
-          <ul className="space-y-3">
-            {product.highlights.map((h) => (
-              <li key={h} className="flex items-start gap-3">
-                <Check className="mt-0.5 size-4 shrink-0 text-primary" /> <span>{h}</span>
-              </li>
-            ))}
-          </ul>
-        </TabsContent>
-
-        <TabsContent value="specs" className="mt-6 max-w-2xl">
-          <dl className="divide-y rounded-lg border">
-            {product.specs.map(([k, v]) => (
-              <div key={k} className="grid grid-cols-3 gap-4 p-4 text-sm odd:bg-muted/40">
-                <dt className="text-muted-foreground">{k}</dt>
-                <dd className="col-span-2">{v}</dd>
-              </div>
-            ))}
-          </dl>
-        </TabsContent>
-
-        <TabsContent value="reviews" className="mt-6">
-          <div className="grid gap-10 md:grid-cols-3">
-            <div>
-              <p className="text-5xl font-bold">{bn(product.rating)}</p>
-              <p className="mt-1 text-sm text-muted-foreground">{bn(product.reviews)}টি রিভিউ</p>
-              <div className="mt-5 space-y-2">
-                {ratingBars.map((r) => (
-                  <div key={r.star} className="flex items-center gap-3 text-sm">
-                    <span className="flex w-8 items-center gap-1">{bn(r.star)}<Star className="size-3" /></span>
-                    <div className="h-2 flex-1 overflow-hidden rounded-full bg-muted">
-                      <div className="h-full bg-primary" style={{ width: `${r.pct}%` }} />
-                    </div>
-                    <span className="w-10 text-right text-muted-foreground">{bn(r.pct)}%</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="space-y-6 md:col-span-2">
-              {reviews.map((r) => (
-                <article key={r.name} className="border-b pb-6 last:border-0">
-                  <div className="flex items-center justify-between">
-                    <p className="font-medium">{r.name} <span className="text-sm font-normal text-muted-foreground">· {r.city}</span></p>
-                    <span className="text-xs text-muted-foreground">{r.date}</span>
-                  </div>
-                  <div className="mt-1 flex gap-0.5" aria-label={`${r.rating} স্টার`}>
-                    {Array.from({ length: 5 }).map((_, i) => (
-                      <Star key={i} className={`size-3.5 ${i < r.rating ? "fill-current" : "text-muted-foreground/40"}`} />
-                    ))}
-                  </div>
-                  <p className="mt-3 text-sm leading-relaxed">{r.text}</p>
-                  <Badge variant="outline" className="mt-3 font-normal">ক্রয় করা ক্রেতা</Badge>
-                </article>
-              ))}
-              <Button variant="outline">আরও রিভিউ দেখুন</Button>
-            </div>
-          </div>
+        <TabsContent value="desc" className="mt-5 max-w-3xl text-sm leading-relaxed text-muted-foreground">
+          <p>{product.description}</p>
         </TabsContent>
       </Tabs>
-
-      {/* ---------- Related ---------- */}
-      <section className="mt-16">
-        <h2 className="mb-5 text-xl font-bold md:text-2xl">এগুলোও পছন্দ হতে পারে</h2>
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-          {related.map((r) => (
-            <Link key={r.name} href="#" className="group">
-              <div className="flex aspect-square items-center justify-center rounded-xl bg-muted">
-                <ImageIcon className="size-8 text-muted-foreground/40" />
-              </div>
-              <p className="mt-3 line-clamp-1 text-sm font-medium group-hover:text-primary">{r.name}</p>
-              <p className="font-bold">{taka(r.price)}</p>
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      {/* ---------- Mobile sticky bar ---------- */}
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t bg-background/95 p-3 backdrop-blur sm:hidden">
+      {/* ---------- Mobile Sticky CTA ---------- */}
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t bg-background/95 p-3 backdrop-blur-md sm:hidden shadow-lg">
         <div className="flex items-center gap-3">
           <div className="leading-tight">
-            <p className="text-lg font-bold">{taka(product.price * qty)}</p>
-            <p className="text-xs text-muted-foreground line-through">{taka(product.old * qty)}</p>
+            <span className="text-xs text-muted-foreground">মোট দাম:</span>
+            <p className="text-lg font-extrabold text-foreground">{taka(product.suggestedPrice * qty)}</p>
           </div>
-          <Button variant="outline" size="icon" className="ml-auto" aria-label="কার্টে যোগ করুন"><ShoppingCart /></Button>
-          <Button className="flex-1">অর্ডার করুন</Button>
+          <Button
+            className="flex-1 rounded-xl font-semibold shadow-md"
+            disabled={!product.inStock}
+          >
+            এখনই অর্ডার করুন
+          </Button>
         </div>
       </div>
     </main>
