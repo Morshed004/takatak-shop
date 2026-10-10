@@ -20,7 +20,7 @@ import { ShoppingBag, Eye, MapPin, Phone, User, FileText } from "lucide-react";
 import Link from "next/link";
 
 export const metadata = {
-  title: "Orders | My Store",
+  title: "Orders",
 };
 
 // Dummy Orders Data (আপনার API / Database অনুযায়ী রিপ্লেস করবেন)

@@ -28,7 +28,7 @@ import {
 } from "@/components/ui/table";
 
 export const metadata = {
-  title: "Products | My Store",
+  title: "Products",
 };
 
 interface PageProps {
