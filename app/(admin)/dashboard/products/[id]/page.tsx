@@ -36,7 +36,7 @@ export default async function ProductDetailsPage({
     <main className="min-h-screen bg-muted/30 px-4 py-8 md:px-8">
       <div className="mx-auto max-w-5xl space-y-6">
         <Button variant="outline" size="sm">
-          <Link href="/dashboard">← Back to Products</Link>
+          <Link href="/dashboard/products">← Back to Products</Link>
         </Button>
 
         <Card className="overflow-hidden">

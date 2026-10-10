@@ -1,15 +1,16 @@
-import Link from "next/link";
-import { getProducts, formatPrice } from "@/lib/businesskoro";
+import { formatPrice, getProducts } from "@/lib/businesskoro";
 import {
+  ImageIcon,
   Package,
   PackageX,
-  ArrowUpRight,
-  ImageIcon,
   ShoppingBag,
 } from "lucide-react";
+import Link from "next/link";
 
-import { Button } from "@/components/ui/button";
+import { PaginationControl } from "@/components/pagination-control";
+import { ProductSearch } from "@/components/product-search"; // Search component import
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -25,28 +26,34 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { PaginationControl } from "@/components/pagination-control"; // Import pagination
 
 export const metadata = {
   title: "Products | My Store",
 };
 
 interface PageProps {
-  searchParams: Promise<{ page?: string }>;
+  searchParams: Promise<{ page?: string; search?: string }>;
 }
 
 export default async function ProductsPage({ searchParams }: PageProps) {
   const resolvedParams = await searchParams;
   const { data: allProducts } = await getProducts();
 
+  const searchQuery = resolvedParams?.search?.toLowerCase() || "";
+
+  // Filter products based on search query (name matching)
+  const filteredProducts = allProducts.filter((product) =>
+    product.name.toLowerCase().includes(searchQuery)
+  );
+
   // Pagination Logic (10 items per page)
   const ITEMS_PER_PAGE = 10;
   const currentPage = Number(resolvedParams?.page) || 1;
-  const totalPages = Math.ceil(allProducts.length / ITEMS_PER_PAGE) || 1;
+  const totalPages = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE) || 1;
 
-  // Slice the products array for current page
+  // Slice the filtered products array for current page
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const products = allProducts.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  const products = filteredProducts.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
   function truncateTitle(title: string, maxLength = 35) {
     if (title.length <= maxLength) return title;
@@ -66,10 +73,13 @@ export default async function ProductsPage({ searchParams }: PageProps) {
               Manage and explore your product collection.
             </p>
           </div>
-          <Badge variant="outline" className="w-fit gap-1.5 px-3 py-1 text-xs">
-            <ShoppingBag className="size-3.5 text-muted-foreground" />
-            <span>Product Catalog</span>
-          </Badge>
+          <div className="flex items-center gap-2">
+            <ProductSearch />
+            <Badge variant="outline" className="hidden sm:flex gap-1.5 px-3 py-1.5 text-xs">
+              <ShoppingBag className="size-3.5 text-muted-foreground" />
+              <span>Product Catalog</span>
+            </Badge>
+          </div>
         </div>
 
         {/* Card Container */}
@@ -80,7 +90,8 @@ export default async function ProductsPage({ searchParams }: PageProps) {
                 All Products
               </CardTitle>
               <CardDescription className="text-xs">
-                Showing {products.length} of {allProducts.length} products
+                Showing {products.length} of {filteredProducts.length} products
+                {searchQuery && ` (filtered from ${allProducts.length} total)`}
               </CardDescription>
             </div>
           </CardHeader>
@@ -265,18 +276,20 @@ export default async function ProductsPage({ searchParams }: PageProps) {
             </div>
 
             {/* Empty State */}
-            {allProducts.length === 0 && (
+            {filteredProducts.length === 0 && (
               <div className="flex flex-col items-center justify-center p-8 text-center space-y-2 text-muted-foreground min-h-50">
                 <Package className="size-8 stroke-[1.5]" />
                 <p className="text-sm font-medium">No products found</p>
                 <p className="text-xs text-muted-foreground/80">
-                  Your catalog is currently empty.
+                  {searchQuery
+                    ? `No results match "${searchQuery}".`
+                    : "Your catalog is currently empty."}
                 </p>
               </div>
             )}
 
             {/* Pagination Controls */}
-            {allProducts.length > 0 && (
+            {filteredProducts.length > 0 && (
               <PaginationControl
                 currentPage={currentPage}
                 totalPages={totalPages}
