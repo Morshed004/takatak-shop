@@ -86,7 +86,7 @@ export function ProductEditForm({ product }: { product: Product }) {
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <Button variant="outline" size="sm" className="w-fit gap-2">
-          <Link href="/dashboard/products">
+          <Link href="/dashboard/products" className="flex">
             <ArrowLeft className="size-4" />
             <span>Back to Products</span>
           </Link>

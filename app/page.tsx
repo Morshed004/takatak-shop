@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import {
   ArrowRight,
+  Banknote,
   ChevronLeft,
   ChevronRight,
   Eye,
@@ -91,26 +92,22 @@ const products = [
   },
 ];
 
-const trustBadges = [
+const perks = [
   {
     icon: Truck,
     title: "দ্রুত ডেলিভারি",
-    text: "ঢাকায় ২৪ ঘণ্টা, সারাদেশে ২–৪ দিন",
+    text: "সারাদেশে ২–৪ দিন",
   },
+  {
+    icon: Banknote,
+    title: "ক্যাশ অন ডেলিভারি",
+    text: "পণ্য হাতে পেয়ে টাকা দিন",
+  },
+  { icon: RotateCcw, title: "রিটার্ন", text: "পছন্দ না হলে সহজে ফেরত" },
   {
     icon: ShieldCheck,
     title: "১০০% অরিজিনাল",
-    text: "সরাসরি প্রস্তুতকারক থেকে সংগৃহীত",
-  },
-  {
-    icon: RotateCcw,
-    title: "সহজ রিটার্ন পলিসি",
-    text: "৭ দিনের মধ্যে পরিবর্তন বা ফেরত",
-  },
-  {
-    icon: Headphones,
-    title: "২৪/৭ সাপোর্ট",
-    text: "যেকোনো প্রয়োজনে পাশে আছি",
+    text: "নিজে যাচাই করা পণ্য, সরাসরি আমাদের কাছ থেকে",
   },
 ];
 
@@ -133,7 +130,7 @@ export default function HomePage() {
     setCurrentSlide(
       (prev) => (prev - 1 + heroSlides.length) % heroSlides.length,
     );
-    const year = new Date().getFullYear();
+  const year = new Date().getFullYear();
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -158,56 +155,60 @@ export default function HomePage() {
             {heroSlides.map((slide, index) => (
               <div
                 key={slide.id}
-                className={`absolute inset-0 transition-opacity duration-700 ease-in-out flex flex-col justify-center p-8 md:p-16 bg-linear-to-r ${
+                /* px-12 (mobile) এবং md:px-16 (desktop) ব্যবহার করা হয়েছে যাতে বাটন টেক্সটের ওপর না আসে */
+                className={`absolute inset-0 transition-opacity duration-700 ease-in-out flex flex-col justify-center px-12 py-8 md:p-16 bg-linear-to-r ${
                   slide.bg
                 } text-white ${
                   index === currentSlide ? "opacity-100 z-10" : "opacity-0 z-0"
                 }`}
               >
                 <div className="max-w-xl">
-                  <h1 className="text-3xl font-extrabold md:text-5xl leading-tight">
+                  <h1 className="text-2xl font-extrabold sm:text-3xl md:text-5xl leading-tight">
                     {slide.title}
                   </h1>
-                  <p className="mt-4 text-sm md:text-lg opacity-90">
+                  <p className="mt-3 text-xs sm:text-sm md:text-lg opacity-90 line-clamp-2 md:line-clamp-none">
                     {slide.subtitle}
                   </p>
                   <a href="#products">
                     <Button
                       size="lg"
                       variant="secondary"
-                      className="mt-6 rounded-full font-semibold gap-2"
+                      className="mt-4 md:mt-6 rounded-full font-semibold gap-2 text-xs md:text-sm h-9 md:h-11 px-4 md:px-6"
                     >
-                      এক্সপ্লোর করুন <ArrowRight className="size-4" />
+                      এক্সপ্লোর করুন{" "}
+                      <ArrowRight className="size-3.5 md:size-4" />
                     </Button>
                   </a>
                 </div>
               </div>
             ))}
 
-            {/* Carousel Controls */}
+            {/* Carousel Controls - Mobile specific adjustments */}
             <button
               onClick={prevSlide}
-              className="absolute left-4 top-1/2 z-20 -translate-y-1/2 rounded-full bg-black/30 p-2 text-white backdrop-blur hover:bg-black/50 transition-colors"
+              className="absolute left-2 md:left-4 top-1/2 z-20 -translate-y-1/2 rounded-full bg-black/30 p-1.5 md:p-2 text-white backdrop-blur hover:bg-black/50 transition-colors"
               aria-label="Previous Slide"
             >
-              <ChevronLeft className="size-6" />
+              <ChevronLeft className="size-5 md:size-6" />
             </button>
             <button
               onClick={nextSlide}
-              className="absolute right-4 top-1/2 z-20 -translate-y-1/2 rounded-full bg-black/30 p-2 text-white backdrop-blur hover:bg-black/50 transition-colors"
+              className="absolute right-2 md:right-4 top-1/2 z-20 -translate-y-1/2 rounded-full bg-black/30 p-1.5 md:p-2 text-white backdrop-blur hover:bg-black/50 transition-colors"
               aria-label="Next Slide"
             >
-              <ChevronRight className="size-6" />
+              <ChevronRight className="size-5 md:size-6" />
             </button>
 
             {/* Slide Indicators */}
-            <div className="absolute bottom-4 left-1/2 z-20 flex -translate-x-1/2 gap-2">
+            <div className="absolute bottom-3 md:bottom-4 left-1/2 z-20 flex -translate-x-1/2 gap-2">
               {heroSlides.map((_, i) => (
                 <button
                   key={i}
                   onClick={() => setCurrentSlide(i)}
-                  className={`h-2 rounded-full transition-all ${
-                    i === currentSlide ? "w-6 bg-white" : "w-2 bg-white/50"
+                  className={`h-1.5 md:h-2 rounded-full transition-all ${
+                    i === currentSlide
+                      ? "w-5 md:w-6 bg-white"
+                      : "w-1.5 md:w-2 bg-white/50"
                   }`}
                   aria-label={`Go to slide ${i + 1}`}
                 />
@@ -217,19 +218,16 @@ export default function HomePage() {
         </section>
 
         {/* 4. Trust Badges Section */}
-        <section className="mx-auto max-w-7xl px-4 py-10">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {trustBadges.map(({ icon: Icon, title, text }) => (
-              <div
-                key={title}
-                className="flex items-center gap-4 rounded-xl border bg-card p-4 shadow-sm"
-              >
-                <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                  <Icon className="size-6" />
-                </div>
+        <section className="mx-auto max-w-7xl px-4 py-8">
+          <div className="grid grid-cols-2 gap-4 rounded-xl border bg-card p-5 lg:grid-cols-4">
+            {perks.map(({ icon: Icon, title, text }) => (
+              <div key={title} className="flex items-start gap-3">
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <Icon className="size-5" />
+                </span>
                 <div>
-                  <h4 className="text-sm font-bold">{title}</h4>
-                  <p className="text-xs text-muted-foreground mt-0.5">{text}</p>
+                  <p className="text-sm font-semibold">{title}</p>
+                  <p className="text-xs text-muted-foreground">{text}</p>
                 </div>
               </div>
             ))}
