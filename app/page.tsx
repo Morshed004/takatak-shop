@@ -1,96 +1,31 @@
-"use client";
-
-import { useState, useEffect } from "react";
+import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import {
-  ArrowRight,
   Banknote,
-  ChevronLeft,
-  ChevronRight,
   Eye,
-  Headphones,
-  Heart,
   RotateCcw,
   ShieldCheck,
   Truck,
 } from "lucide-react";
 import Link from "next/link";
+import HeroCarousel from "@/components/HeroCarousel"; // Client Component
 
-/* ---------- Hero Carousel Data ---------- */
-const heroSlides = [
-  {
-    id: 1,
-    title: "নতুন সিজনের সেরা কালেকশন",
-    subtitle: "ফ্যাশন ও গ্যাজেটের বিশাল সমাহার নিয়ে আমরা হাজির।",
-    bg: "from-emerald-600 to-teal-800",
-  },
-  {
-    id: 2,
-    title: "অভিজাত লাইফস্টাইল প্রডাক্টস",
-    subtitle: "আপনার দৈনন্দিন জীবনের জন্য সেরা প্রিমিয়াম কোয়ালিটি।",
-    bg: "from-emerald-600 to-teal-800",
-  },
-  {
-    id: 3,
-    title: "বিশেষ আকর্ষণীয় অফার",
-    subtitle: "সারাদেশে ক্যাশ অন ডেলিভারি সুবিধা সহ দ্রুততম ডেলিভারি।",
-    bg: "from-emerald-600 to-teal-800",
-  },
-];
+/* ---------- TypeScript Types ---------- */
+interface ProductImage {
+  id: string;
+  url: string;
+}
 
-/* ---------- Dummy Products (No Badge, No Rating) ---------- */
-const products = [
-  {
-    id: 1,
-    name: "পুরুষদের কটন পাঞ্জাবি",
-    price: 1450,
-    old: 1990,
-  },
-  {
-    id: 2,
-    name: "ওয়্যারলেস ব্লুটুথ ইয়ারবাড",
-    price: 1290,
-    old: 1890,
-  },
-  {
-    id: 3,
-    name: "জামদানি শাড়ি (হ্যান্ডলুম)",
-    price: 4850,
-    old: 5500,
-  },
-  {
-    id: 4,
-    name: "স্টেইনলেস স্টিল ওয়াটার বোতল",
-    price: 690,
-    old: 950,
-  },
-  {
-    id: 5,
-    name: "স্মার্ট ফিটনেস ব্যান্ড",
-    price: 2190,
-    old: 2990,
-  },
-  {
-    id: 6,
-    name: "অর্গানিক সরিষার তেল (৫ লিটার)",
-    price: 1180,
-    old: 1350,
-  },
-  {
-    id: 7,
-    name: "মহিলাদের লেদার হ্যান্ডব্যাগ",
-    price: 1890,
-    old: 2600,
-  },
-  {
-    id: 8,
-    name: "নন-স্টিক কুকওয়্যার সেট",
-    price: 3290,
-    old: 4200,
-  },
-];
+interface Product {
+  id: string;
+  name: string;
+  description?: string | null;
+  suggestedPrice: number;
+  adminPrice?: number | null;
+  images: ProductImage[];
+}
 
 const perks = [
   {
@@ -113,23 +48,28 @@ const perks = [
 
 const taka = (n: number) => `৳${n.toLocaleString("bn-BD")}`;
 
-export default function HomePage() {
-  const [currentSlide, setCurrentSlide] = useState(0);
+// Server-side Data Fetcher Function
+async function getProducts(): Promise<Product[]> {
+  try {
+    // সরাসরি Prisma দিয়ে সার্ভারেই ফেচ করা নিরাপদ ও দ্রুততর
+    const products = await prisma.product.findMany({
+      include: {
+        images: true,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+    return products;
+  } catch (error) {
+    console.error("Error fetching products:", error);
+    return [];
+  }
+}
 
-  // Auto slide carousel
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
-    }, 5000);
-    return () => clearInterval(timer);
-  }, []);
-
-  const nextSlide = () =>
-    setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
-  const prevSlide = () =>
-    setCurrentSlide(
-      (prev) => (prev - 1 + heroSlides.length) % heroSlides.length,
-    );
+export default async function HomePage() {
+  // সার্ভার সাইড থেকেই ডাটা ফেচ হবে
+  const products = await getProducts();
   const year = new Date().getFullYear();
 
   return (
@@ -139,7 +79,7 @@ export default function HomePage() {
         <p>🎉 সারাদেশে ক্যাশ অন ডেলিভারি সুবিধা উপলব্ধ!</p>
       </div>
 
-      {/* 2. Simplified Navbar (No Search, No Cart, No User) */}
+      {/* 2. Simplified Navbar */}
       <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3.5">
           <Link href="/" className="text-2xl font-black tracking-tight">
@@ -149,72 +89,9 @@ export default function HomePage() {
       </header>
 
       <main>
-        {/* 3. Hero Carousel Section */}
+        {/* 3. Hero Carousel Section (Client Component) */}
         <section className="mx-auto max-w-7xl px-4 pt-6">
-          <div className="relative overflow-hidden rounded-2xl bg-muted h-80 md:h-105">
-            {heroSlides.map((slide, index) => (
-              <div
-                key={slide.id}
-                /* px-12 (mobile) এবং md:px-16 (desktop) ব্যবহার করা হয়েছে যাতে বাটন টেক্সটের ওপর না আসে */
-                className={`absolute inset-0 transition-opacity duration-700 ease-in-out flex flex-col justify-center px-12 py-8 md:p-16 bg-linear-to-r ${
-                  slide.bg
-                } text-white ${
-                  index === currentSlide ? "opacity-100 z-10" : "opacity-0 z-0"
-                }`}
-              >
-                <div className="max-w-xl">
-                  <h1 className="text-2xl font-extrabold sm:text-3xl md:text-5xl leading-tight">
-                    {slide.title}
-                  </h1>
-                  <p className="mt-3 text-xs sm:text-sm md:text-lg opacity-90 line-clamp-2 md:line-clamp-none">
-                    {slide.subtitle}
-                  </p>
-                  <a href="#products">
-                    <Button
-                      size="lg"
-                      variant="secondary"
-                      className="mt-4 md:mt-6 rounded-full font-semibold gap-2 text-xs md:text-sm h-9 md:h-11 px-4 md:px-6"
-                    >
-                      এক্সপ্লোর করুন{" "}
-                      <ArrowRight className="size-3.5 md:size-4" />
-                    </Button>
-                  </a>
-                </div>
-              </div>
-            ))}
-
-            {/* Carousel Controls - Mobile specific adjustments */}
-            <button
-              onClick={prevSlide}
-              className="absolute left-2 md:left-4 top-1/2 z-20 -translate-y-1/2 rounded-full bg-black/30 p-1.5 md:p-2 text-white backdrop-blur hover:bg-black/50 transition-colors"
-              aria-label="Previous Slide"
-            >
-              <ChevronLeft className="size-5 md:size-6" />
-            </button>
-            <button
-              onClick={nextSlide}
-              className="absolute right-2 md:right-4 top-1/2 z-20 -translate-y-1/2 rounded-full bg-black/30 p-1.5 md:p-2 text-white backdrop-blur hover:bg-black/50 transition-colors"
-              aria-label="Next Slide"
-            >
-              <ChevronRight className="size-5 md:size-6" />
-            </button>
-
-            {/* Slide Indicators */}
-            <div className="absolute bottom-3 md:bottom-4 left-1/2 z-20 flex -translate-x-1/2 gap-2">
-              {heroSlides.map((_, i) => (
-                <button
-                  key={i}
-                  onClick={() => setCurrentSlide(i)}
-                  className={`h-1.5 md:h-2 rounded-full transition-all ${
-                    i === currentSlide
-                      ? "w-5 md:w-6 bg-white"
-                      : "w-1.5 md:w-2 bg-white/50"
-                  }`}
-                  aria-label={`Go to slide ${i + 1}`}
-                />
-              ))}
-            </div>
-          </div>
+          <HeroCarousel />
         </section>
 
         {/* 4. Trust Badges Section */}
@@ -234,7 +111,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* 5. Product Grid Showcase Section (No Badges, No Ratings, View More Button) */}
+        {/* 5. Product Grid Showcase Section */}
         <section id="products" className="mx-auto max-w-7xl px-4 pb-12">
           <div className="mb-8 flex items-end justify-between">
             <div>
@@ -245,20 +122,26 @@ export default function HomePage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4 lg:gap-6">
-            {products.map((p) => (
-              <ProductCard key={p.id} p={p} />
-            ))}
-          </div>
+          {products.length === 0 ? (
+            <div className="rounded-xl border p-12 text-center text-muted-foreground">
+              <p>কোনো প্রোডাক্ট পাওয়া যায়নি!</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4 lg:gap-6">
+              {products.map((p) => (
+                <ProductCard key={p.id} p={p} />
+              ))}
+            </div>
+          )}
         </section>
 
         {/* 6. Promotional Banners */}
         <section className="mx-auto max-w-7xl px-4 pb-14">
           <div className="grid gap-6 md:grid-cols-2">
             <div className="rounded-2xl bg-linear-to-r from-slate-900 to-slate-800 p-8 text-white">
-              <h3 className="text-2xl font-bold">বিশেষ ছাড়ের অফার</h3>
+              <h3 className="text-2xl font-bold">বিশেষ ছাড়ের অফার</h3>
               <p className="mt-2 text-sm text-slate-300">
-                নির্দিষ্ট পণ্যে পাচ্ছেন আকর্ষণীয় মূল্যছাড়।
+                নির্দিষ্ট পণ্যে পাচ্ছেন আকর্ষণীয় মূল্যছাড়।
               </p>
               <a href="#products">
                 <Button
@@ -296,12 +179,12 @@ export default function HomePage() {
               তাকাটাক<span className="text-primary">.</span>
             </Link>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              আমরা আপনাকে দিচ্ছি সর্বোচ্চ কোয়ালিটি ও সঠিক মূল্যের নিশ্চয়তা।
+              আমরা আপনাকে দিচ্ছি সর্বোচ্চ কোয়ালিটি ও সঠিক মূল্যের নিশ্চয়তা।
             </p>
           </div>
 
           <div>
-            <h5 className="font-bold mb-4 text-sm">সহায়ক লিংক</h5>
+            <h5 className="font-bold mb-4 text-sm">সহায়ক লিংক</h5>
             <ul className="space-y-2.5 text-sm text-muted-foreground">
               <li>
                 <Link href="#" className="hover:text-primary">
@@ -355,18 +238,27 @@ export default function HomePage() {
   );
 }
 
-/* ---------- Simplified Product Card (No Badge, No Rating, View More CTA) ---------- */
-function ProductCard({ p }: { p: (typeof products)[number] }) {
+/* ---------- Server-rendered Product Card ---------- */
+function ProductCard({ p }: { p: Product }) {
+  const imageUrl = p.images && p.images.length > 0 ? p.images[0].url : null;
+  const displayPrice = p.adminPrice ?? p.suggestedPrice;
+
   return (
     <Card className="group overflow-hidden rounded-xl border bg-card transition-all hover:shadow-md">
-      {/* Product Image Area */}
       <div className="relative aspect-square overflow-hidden bg-muted">
-        <div className="flex h-full w-full items-center justify-center text-xs text-muted-foreground">
-          [প্রোডাক্ট ছবি]
-        </div>
+        {imageUrl ? (
+          <img
+            src={imageUrl}
+            alt={p.name}
+            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center text-xs text-muted-foreground">
+            [ছবি পাওয়া যায়নি]
+          </div>
+        )}
       </div>
 
-      {/* Product Details */}
       <CardContent className="p-4">
         <h3 className="line-clamp-2 min-h-10 text-sm font-semibold text-foreground group-hover:text-primary transition-colors">
           {p.name}
@@ -374,11 +266,10 @@ function ProductCard({ p }: { p: (typeof products)[number] }) {
 
         <div className="mt-3 flex items-baseline gap-2">
           <span className="text-lg font-bold text-foreground">
-            {taka(p.price)}
+            {taka(displayPrice)}
           </span>
         </div>
 
-        {/* View More Button Replacing Add To Cart */}
         <Link href={`/product/${p.id}`} className="mt-3 block">
           <Button
             variant="outline"

@@ -17,9 +17,9 @@ export async function publishProduct(formData: FormData) {
     const imageFiles = formData.getAll("images") as File[];
     const imageUrls: string[] = [];
 
-    // ২. প্রতিটি ইমেজ Cloudinary-তে আপলোড করা
+    // ২. প্রতিটি বৈধ ইমেজ Cloudinary-তে আপলোড করা
     for (const file of imageFiles) {
-      if (file.size > 0 && file.name !== "undefined") {
+      if (file && file.size > 0 && file.name !== "undefined") {
         const arrayBuffer = await file.arrayBuffer();
         const buffer = Buffer.from(arrayBuffer);
 
@@ -28,30 +28,38 @@ export async function publishProduct(formData: FormData) {
             .upload_stream(
               { folder: "takatak_products" },
               (error, result) => {
-                if (error || !result) reject(error);
+                if (error || !result) reject(error || new Error("Cloudinary upload failed"));
                 else resolve(result);
               }
             )
             .end(buffer);
         });
 
-        imageUrls.push(uploadResult.secure_url);
+        if (uploadResult?.secure_url) {
+          imageUrls.push(uploadResult.secure_url);
+        }
       }
     }
 
     // ৩. PostgreSQL-এ Prisma দিয়ে ডেটা সেভ / আপডেট করা
+    // যদি নতুন ছবি আপলোড করা হয় শুধু তখনই ইমেজ টেবিল আপডেট হবে, নতুবা পুরনো ছবি বহাল থাকবে
+    const updateData: any = {
+      name,
+      description,
+      adminPrice,
+      suggestedPrice,
+      customerPaysDelivery,
+    };
+
+    if (imageUrls.length > 0) {
+      updateData.images = {
+        create: imageUrls.map((url) => ({ url })),
+      };
+    }
+
     const savedProduct = await prisma.product.upsert({
-      where: { id: id || "new-product-id" },
-      update: {
-        name,
-        description,
-        adminPrice,
-        suggestedPrice,
-        customerPaysDelivery,
-        images: {
-          create: imageUrls.map((url) => ({ url })),
-        },
-      },
+      where: { id: id && id !== "" ? id : "non-existent-id" },
+      update: updateData,
       create: {
         name,
         description,
@@ -70,8 +78,8 @@ export async function publishProduct(formData: FormData) {
     revalidatePath("/dashboard/products");
 
     return { success: true, data: savedProduct };
-  } catch (error) {
-    console.error("Error publishing product:", error);
-    return { success: false, error: "Failed to publish product." };
+  } catch (error: any) {
+    console.error("Detailed Error publishing product:", error);
+    return { success: false, error: error.message || "Failed to publish product." };
   }
 }

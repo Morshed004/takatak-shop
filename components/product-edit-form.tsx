@@ -25,8 +25,8 @@ type Product = {
   description?: string | null;
   suggestedPrice: number;
   inStock: boolean;
-  images?: string[];
-  minimumSellingPrice: {
+  images?: { url: string }[] | string[]; // স্ট্রিং বা অবজেক্ট দুটোই হ্যান্ডেল করার জন্য
+  minimumSellingPrice?: {
     customerPaysDelivery: number;
   };
   costPrice?: number;
@@ -34,11 +34,17 @@ type Product = {
 };
 
 export function ProductEditForm({ product }: { product: Product }) {
-  const [title, setTitle] = useState(product.name || "");
-  const [description, setDescription] = useState(product.description || "");
-  const [myPrice, setMyPrice] = useState<number | string>(product.suggestedPrice || "");
+  const [title, setTitle] = useState(product?.name || "");
+  const [description, setDescription] = useState(product?.description || "");
+  const [myPrice, setMyPrice] = useState<number | string>(product?.suggestedPrice || "");
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [previewUrls, setPreviewUrls] = useState<string[]>(product.images || []);
+  
+  // প্রিভিউ ইউআরএল হ্যান্ডেল করার নিরাপদ লজিক
+  const initialImages = product?.images
+    ? product.images.map((img) => (typeof img === "string" ? img : img.url))
+    : [];
+  const [previewUrls, setPreviewUrls] = useState<string[]>(initialImages);
+  
   const [isPending, startTransition] = useTransition();
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -56,16 +62,16 @@ export function ProductEditForm({ product }: { product: Product }) {
     setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleSubmit = (e: React.SubmitEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
     const formData = new FormData();
-    formData.append("id", product.id);
+    formData.append("id", product?.id || "");
     formData.append("name", title);
     formData.append("description", description);
     formData.append("adminPrice", String(myPrice));
-    formData.append("suggestedPrice", String(product.suggestedPrice));
-    formData.append("customerPaysDelivery", String(product.minimumSellingPrice.customerPaysDelivery));
+    formData.append("suggestedPrice", String(product?.suggestedPrice || 0));
+    formData.append("customerPaysDelivery", String(product?.minimumSellingPrice?.customerPaysDelivery || 0));
 
     // ফাইলগুলো FormData-তে অ্যাপেন্ড করা
     selectedFiles.forEach((file) => {
@@ -84,17 +90,18 @@ export function ProductEditForm({ product }: { product: Product }) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {/* বাকি JSX কোড অপরিবর্তিত থাকবে */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <Button variant="outline" size="sm" className="w-fit gap-2">
-          <Link href="/dashboard/products" className="flex">
+        <Button variant="outline" size="sm" asChild className="w-fit gap-2">
+          <Link href="/dashboard/products">
             <ArrowLeft className="size-4" />
             <span>Back to Products</span>
           </Link>
         </Button>
 
         <div className="flex items-center gap-3">
-          <Badge variant={product.inStock ? "secondary" : "destructive"}>
-            {product.inStock ? "In Stock" : "Out of Stock"}
+          <Badge variant={product?.inStock ? "secondary" : "destructive"}>
+            {product?.inStock ? "In Stock" : "Out of Stock"}
           </Badge>
           <Button type="submit" disabled={isPending} className="gap-2 cursor-pointer">
             <CheckCircle2 className="size-4" />
@@ -198,11 +205,11 @@ export function ProductEditForm({ product }: { product: Product }) {
             <CardContent className="space-y-2 text-xs">
               <div className="flex justify-between border-b pb-2">
                 <span className="text-muted-foreground">Suggested Price</span>
-                <span className="font-semibold">{formatPrice(product.suggestedPrice)}</span>
+                <span className="font-semibold">{formatPrice(product?.suggestedPrice || 0)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Customer Pays Delivery</span>
-                <span className="font-semibold">{formatPrice(product.minimumSellingPrice.customerPaysDelivery)}</span>
+                <span className="font-semibold">{formatPrice(product?.minimumSellingPrice?.customerPaysDelivery || 0)}</span>
               </div>
             </CardContent>
           </Card>

@@ -9,7 +9,6 @@ import {
   Share2,
   Minus,
   Plus,
-  Truck,
   RotateCcw,
   ShieldCheck,
   Banknote,
@@ -256,41 +255,6 @@ export default function ProductPage() {
             ) : (
               <ImageIcon className="size-16 text-muted-foreground/40" />
             )}
-
-            {!product.inStock ? (
-              <Badge
-                variant="destructive"
-                className="absolute left-4 top-4 text-xs font-semibold uppercase"
-              >
-                স্টক আউট
-              </Badge>
-            ) : (
-              <Badge className="absolute left-4 top-4 bg-emerald-600 hover:bg-emerald-700 text-xs font-medium text-white">
-                স্টকে আছে
-              </Badge>
-            )}
-
-            <div className="absolute right-4 top-4 flex flex-col gap-2">
-              <Button
-                size="icon"
-                variant="secondary"
-                className="size-9 rounded-full shadow-md backdrop-blur-sm"
-                aria-label="উইশলিস্ট"
-                onClick={() => setWished(!wished)}
-              >
-                <Heart
-                  className={`size-4 ${wished ? "fill-destructive text-destructive" : ""}`}
-                />
-              </Button>
-              <Button
-                size="icon"
-                variant="secondary"
-                className="size-9 rounded-full shadow-md backdrop-blur-sm"
-                aria-label="শেয়ার"
-              >
-                <Share2 className="size-4" />
-              </Button>
-            </div>
           </div>
         </div>
 
@@ -304,7 +268,7 @@ export default function ProductPage() {
           </h1>
 
           {/* Pricing Highlight Box (Redesigned for better look) */}
-          <div className="mt-5 rounded-2xl border bg-primary/5 p-5 shadow-sm border-primary/20">
+          <div className="mt-5 rounded-2xl border bg-primary/5 p-5 border-primary/20">
             <div className="flex items-baseline justify-between">
               <div className="flex items-baseline gap-2">
                 <span className="text-3xl md:text-4xl font-extrabold text-primary">
@@ -314,12 +278,16 @@ export default function ProductPage() {
                   / পিস
                 </span>
               </div>
-              <Badge variant="outline" className="border-primary/30 text-primary bg-background font-medium">
+              <Badge
+                variant="outline"
+                className="border-primary/30 text-primary bg-background font-medium"
+              >
                 ডিসকাউন্ট মূল্য
               </Badge>
             </div>
             <p className="mt-2 text-xs text-muted-foreground flex items-center gap-1.5">
-              <Check className="size-3.5 text-emerald-600" /> ক্যাশ অন ডেলিভারি এবং সহজ রিটার্ন সুবিধা
+              <Check className="size-3.5 text-emerald-600" /> ক্যাশ অন ডেলিভারি
+              এবং সহজ রিটার্ন সুবিধা
             </p>
           </div>
 
@@ -339,7 +307,7 @@ export default function ProductPage() {
                     <button
                       key={col}
                       onClick={() => setSelectedColor(col)}
-                      className={`flex items-center gap-1.5 rounded-lg border px-3.5 py-1.5 text-sm font-medium transition ${
+                      className={`flex items-center gap-1.5 rounded-lg border px-3.5 py-1.5 bg-card text-sm font-medium transition ${
                         selectedColor === col
                           ? "border-primary bg-primary/10 text-primary ring-1 ring-primary"
                           : "border-input hover:bg-muted/50"
@@ -367,7 +335,7 @@ export default function ProductPage() {
                     <button
                       key={s}
                       onClick={() => setSelectedSize(s)}
-                      className={`min-w-12 rounded-lg border py-1.5 text-center text-sm font-semibold transition ${
+                      className={`min-w-12 rounded-lg bg-card border py-1.5 text-center text-sm font-semibold transition ${
                         selectedSize === s
                           ? "border-primary bg-primary text-primary-foreground shadow-sm"
                           : "border-input hover:bg-muted/50"
@@ -384,7 +352,7 @@ export default function ProductPage() {
             <div>
               <p className="mb-2.5 text-sm font-semibold">পরিমাণ</p>
               <div className="flex items-center gap-3">
-                <div className="flex items-center rounded-xl border bg-background p-1 shadow-sm">
+                <div className="flex items-center rounded-xl border bg-card p-1">
                   <Button
                     variant="ghost"
                     size="icon"
@@ -411,9 +379,10 @@ export default function ProductPage() {
             </div>
 
             {/* Customer Information Form Section */}
-            <div className="space-y-4 rounded-2xl border p-4 bg-muted/20">
+            <div className="space-y-4 rounded-2xl border p-4 bg-card">
               <h3 className="text-sm font-semibold flex items-center gap-2">
-                <User className="size-4 text-primary" /> ক্রেতার তথ্য (Customer Information)
+                <User className="size-4 text-primary" /> ক্রেতার তথ্য (Customer
+                Information)
               </h3>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -450,9 +419,10 @@ export default function ProductPage() {
             </div>
 
             {/* Shipping & Address Form Section */}
-            <div className="space-y-4 rounded-2xl border p-4 bg-muted/20">
+            <div className="space-y-4 rounded-2xl border p-4 bg-card">
               <h3 className="text-sm font-semibold flex items-center gap-2">
-                <MapPin className="size-4 text-primary" /> শিপিং ও ঠিকানা (Shipping Address)
+                <MapPin className="size-4 text-primary" /> শিপিং ও ঠিকানা
+                (Shipping Address)
               </h3>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -564,7 +534,7 @@ export default function ProductPage() {
           <div className="mt-8">
             <Button
               size="lg"
-              className="h-13 w-full rounded-xl bg-primary text-base font-semibold shadow-lg transition-all hover:shadow-xl hover:opacity-95"
+              className="h-13 w-full rounded-xl bg-primary text-base font-semibold transition-all hover:shadow-xl hover:opacity-95"
               disabled={!product.inStock}
             >
               এখনই অর্ডার করুন ({taka(product.suggestedPrice * qty + shipping)})
@@ -577,16 +547,20 @@ export default function ProductPage() {
             <CardContent className="p-5">
               <div className="grid grid-cols-2 gap-3 text-xs font-medium text-muted-foreground">
                 <div className="flex items-center gap-2">
-                  <Banknote className="size-4 text-emerald-600" /> ক্যাশ অন ডেলিভারি
+                  <Banknote className="size-4 text-emerald-600" /> ক্যাশ অন
+                  ডেলিভারি
                 </div>
                 <div className="flex items-center gap-2">
-                  <RotateCcw className="size-4 text-emerald-600" /> ৭ দিনে রিটার্ন সুবিধা
+                  <RotateCcw className="size-4 text-emerald-600" /> ৭ দিনে
+                  রিটার্ন সুবিধা
                 </div>
                 <div className="flex items-center gap-2">
-                  <ShieldCheck className="size-4 text-emerald-600" /> ১০০% অরিজিনাল প্রোডাক্ট
+                  <ShieldCheck className="size-4 text-emerald-600" /> ১০০%
+                  অরিজিনাল প্রোডাক্ট
                 </div>
                 <div className="flex items-center gap-2">
-                  <Check className="size-4 text-emerald-600" /> কোয়ালিটি গ্যারান্টি
+                  <Check className="size-4 text-emerald-600" /> কোয়ালিটি
+                  গ্যারান্টি
                 </div>
               </div>
             </CardContent>
@@ -595,23 +569,19 @@ export default function ProductPage() {
       </div>
 
       {/* ---------- Description Tabs with Enhanced Styling (Fixed styling issue) ---------- */}
-      <Tabs defaultValue="desc" className="mt-16">
-        <TabsList className="bg-transparent p-0 border-b w-full justify-start rounded-none h-auto gap-6">
-          <TabsTrigger
-            value="desc"
-            className="border-b-2 border-transparent px-1 pb-3 pt-0 rounded-none data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none font-bold text-base"
-          >
+      <div className="mt-16 max-w-4xl">
+        {/* Header Title */}
+        <div className="pb-3">
+          <h3 className="font-bold text-base text-foreground border-b-2 border-primary inline-block pb-3 -mb-3.5">
             পণ্যের বিবরণ
-          </TabsTrigger>
-        </TabsList>
+          </h3>
+        </div>
 
-        <TabsContent
-          value="desc"
-          className="mt-6 rounded-2xl border bg-card p-6 md:p-8 shadow-sm max-w-4xl text-sm md:text-base leading-relaxed text-foreground prose dark:prose-invert"
-        >
+        {/* Content Card */}
+        <div className="mt-6 rounded-2xl border bg-card p-6 md:p-8 text-sm md:text-base leading-relaxed text-foreground prose dark:prose-invert">
           <ReactMarkdown>{product.description}</ReactMarkdown>
-        </TabsContent>
-      </Tabs>
+        </div>
+      </div>
 
       {/* ---------- Mobile Sticky CTA ---------- */}
       <div className="fixed inset-x-0 bottom-0 z-40 border-t bg-background/95 p-3 backdrop-blur-md sm:hidden shadow-lg">
