@@ -2,7 +2,7 @@ import { Metadata } from "next";
 import ProductClient from "./ProductClient";
 
 interface Props {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
 // 1. Generate static params for all 100+ product IDs at build time
@@ -33,7 +33,7 @@ export const revalidate = 300;
 
 // Generate dynamic metadata for SEO and OpenGraph sharing
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { id } = params;
+  const { id } = await params;
 
   try {
     const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
