@@ -12,7 +12,9 @@ import {
 import Link from "next/link";
 import HeroCarousel from "@/components/HeroCarousel"; // Client Component
 
-/* ---------- TypeScript Types ---------- */
+export const revalidate = 300;
+
+/* ---------- TypeScript Types (Updated to match new schema) ---------- */
 interface ProductImage {
   id: string;
   url: string;
@@ -22,8 +24,7 @@ interface Product {
   id: string;
   name: string;
   description?: string | null;
-  suggestedPrice: number;
-  adminPrice?: number | null;
+  price: number; // Updated: according to new schema
   images: ProductImage[];
 }
 
@@ -46,29 +47,47 @@ const perks = [
   },
 ];
 
-const taka = (n: number) => `৳${n.toLocaleString("bn-BD")}`;
+// Safe Currency Formatter Function
+const taka = (n?: number | null) => {
+  if (n === undefined || n === null || isNaN(n)) {
+    return "৳0";
+  }
+  return `৳${n.toLocaleString("bn-BD")}`;
+};
 
 // Server-side Data Fetcher Function
 async function getProducts(): Promise<Product[]> {
   try {
-    // সরাসরি Prisma দিয়ে সার্ভারেই ফেচ করা নিরাপদ ও দ্রুততর
-    const products = await prisma.product.findMany({
-      include: {
-        images: true,
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+    
+    const response = await fetch(`${baseUrl}/api/products`, {
+      method: 'GET',
+      headers: {
+        'x-app-secret': process.env.APP_SECRET || '',
       },
-      orderBy: {
-        createdAt: "desc",
-      },
+      next: { revalidate: 600 }, 
     });
-    return products;
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const result = await response.json();
+
+    if (result.success && Array.isArray(result.data)) {
+      return result.data;
+    }
+
+    console.error("API Error Message:", result.message);
+    return [];
+
   } catch (error) {
-    console.error("Error fetching products:", error);
+    console.error("Error fetching products via API:", error);
     return [];
   }
 }
 
 export default async function HomePage() {
-  // সার্ভার সাইড থেকেই ডাটা ফেচ হবে
   const products = await getProducts();
   const year = new Date().getFullYear();
 
@@ -89,7 +108,7 @@ export default async function HomePage() {
       </header>
 
       <main>
-        {/* 3. Hero Carousel Section (Client Component) */}
+        {/* 3. Hero Carousel Section */}
         <section className="mx-auto max-w-7xl px-4 pt-6">
           <HeroCarousel />
         </section>
@@ -124,7 +143,7 @@ export default async function HomePage() {
 
           {products.length === 0 ? (
             <div className="rounded-xl border p-12 text-center text-muted-foreground">
-              <p>কোনো প্রোডাক্ট পাওয়া যায়নি!</p>
+              <p>কোনো প্রোডাক্ট পাওয়া যায়নি!</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4 lg:gap-6">
@@ -154,7 +173,7 @@ export default async function HomePage() {
             </div>
 
             <div className="rounded-2xl bg-primary p-8 text-primary-foreground">
-              <h3 className="text-2xl font-bold">ফ্রি হোম ডেলিভারি</h3>
+              <h3 className="text-2xl font-bold">ক্যাশ অন ডেলিভারি</h3>
               <p className="mt-2 text-sm opacity-90">
                 যেকোনো স্থান থেকে আজই আপনার পছন্দের প্রোডাক্ট বেছে নিন।
               </p>
@@ -241,20 +260,20 @@ export default async function HomePage() {
 /* ---------- Server-rendered Product Card ---------- */
 function ProductCard({ p }: { p: Product }) {
   const imageUrl = p.images && p.images.length > 0 ? p.images[0].url : null;
-  const displayPrice = p.adminPrice ?? p.suggestedPrice;
 
   return (
-    <Card className="group overflow-hidden rounded-xl border bg-card transition-all hover:shadow-md">
-      <div className="relative aspect-square overflow-hidden bg-muted">
+    <Card className="group overflow-hidden rounded-xl border bg-card transition-all hover:shadow-md p-0">
+      <div className="relative aspect-square w-full overflow-hidden bg-muted">
         {imageUrl ? (
           <img
             src={imageUrl}
             alt={p.name}
-            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+            className="object-cover transition-transform duration-300 group-hover:scale-105"
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center text-xs text-muted-foreground">
-            [ছবি পাওয়া যায়নি]
+            [ছবি পাওয়া যায়নি]
           </div>
         )}
       </div>
@@ -266,7 +285,7 @@ function ProductCard({ p }: { p: Product }) {
 
         <div className="mt-3 flex items-baseline gap-2">
           <span className="text-lg font-bold text-foreground">
-            {taka(displayPrice)}
+            {taka(p.price)}
           </span>
         </div>
 

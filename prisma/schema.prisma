@@ -1,8 +1,6 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client-js"
   output   = "../lib/generated/prisma"
@@ -13,44 +11,32 @@ datasource db {
 }
 
 // ==========================================
-// 1. PRODUCT & INVENTORY MODELS
+// PRODUCT & INVENTORY MODELS
 // ==========================================
 
 model Product {
-  id          String  @id @default(cuid())
-  name        String
-  description String? @db.Text
-  inStock     Boolean @default(true)
-
-  // Cost & Internal Pricing
-  costPrice      Float @default(0.0)
-  packagingCost  Float @default(0.0)
-  suggestedPrice Float
-
-  // Custom/Final Admin Selling Price (যদি এডমিন রিসেল বা নিজস্ব প্রাইস সেট করে)
-  adminPrice Float?
-
-  // Minimum Selling Price Structure
-  customerPaysDelivery             Float
-  resellerPaysDeliveryInsideDhaka  Float?
-  resellerPaysDeliveryOutsideDhaka Float?
+  id          String   @id @default(cuid())
+  name        String   // Product Title
+  description String?  @db.Text // Description
+  price       Float    // Selling Price
+  inStock     Boolean  @default(true)
 
   // Media & Relations
-  images     ProductImage[]
-  variants   ProductVariant[]
-  orderItems OrderItem[]
+  images      ProductImage[]
+  variants    ProductVariant[]
+  orderItems  OrderItem[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   @@map("products")
 }
 
 model ProductImage {
-  id        String  @id @default(cuid())
-  url       String
+  id        String   @id @default(cuid())
+  url       String   // Cloudinary secure URL
   productId String
-  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
 
@@ -58,12 +44,12 @@ model ProductImage {
 }
 
 model ProductVariant {
-  id        String  @id @default(cuid())
-  color     String
-  size      String?
-  inStock   Boolean @default(true)
+  id        String   @id @default(cuid())
+  color     String?  // Optional color
+  size      String?  // Optional size
+  inStock   Boolean  @default(true)
   productId String
-  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -72,7 +58,7 @@ model ProductVariant {
 }
 
 // ==========================================
-// 2. ORDER & SHIPPING MODELS
+// ORDER & SHIPPING MODELS
 // ==========================================
 
 enum OrderStatus {
@@ -84,40 +70,38 @@ enum OrderStatus {
 }
 
 model Order {
-  id          String      @id @default(cuid())
-  orderNumber String      @unique // যেমন: ORD-1001
-  totalAmount Float
-  status      OrderStatus @default(PENDING)
+  id            String      @id @default(cuid())
+  orderNumber   String      @unique 
+  totalAmount   Float
+  status        OrderStatus @default(PENDING)
 
-  // Customer Shipping Information
-  customerName String
-  phone        String
-  address      String
-  division     String
-  district     String
-  customerNote String? @db.Text
+  customerName  String
+  phone         String
+  address       String
+  division      String
+  district      String
+  customerNote  String?     @db.Text
 
-  // Order Items
-  items OrderItem[]
+  items         OrderItem[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   @@map("orders")
 }
 
 model OrderItem {
-  id      String @id @default(cuid())
-  orderId String
-  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  id        String @id @default(cuid())
+  orderId   String
+  order     Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   productId String
   product   Product @relation(fields: [productId], references: [id])
 
-  quantity  Int   @default(1)
-  unitPrice Float // অর্ডারের সময় নির্ধারিত মূল্য
+  quantity  Int     @default(1)
+  unitPrice Float 
 
-  variantInfo String? // যেমন: "Red / L"
+  variantInfo String? 
 
   createdAt DateTime @default(now())
 

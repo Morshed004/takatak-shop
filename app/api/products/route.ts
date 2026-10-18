@@ -3,11 +3,11 @@ import { prisma } from '@/lib/prisma';
 
 export async function GET(request: Request) {
   try {
-    // 1. Request Header APP_SECRET check
+    // 1. Check Request Header APP_SECRET for security
     const secretHeader = request.headers.get('x-app-secret');
     const appSecret = process.env.APP_SECRET;
 
-    // যদি env-এ APP_SECRET না থাকে অথবা হেডার না মিলে
+    // If APP_SECRET is missing in env or headers do not match
     if (!appSecret || secretHeader !== appSecret) {
       return NextResponse.json(
         { 
@@ -18,7 +18,7 @@ export async function GET(request: Request) {
       );
     }
 
-    // 2. ডেটাবেজ থেকে প্রোডাক্ট, ইমেজ এবং ভ্যারিয়েন্ট ফেচ করা
+    // 2. Fetch products along with images and variants from the database
     const products = await prisma.product.findMany({
       include: {
         images: true,
@@ -29,7 +29,7 @@ export async function GET(request: Request) {
       },
     });
 
-    // 3. সফল রেসপন্স রিটার্ন করা
+    // 3. Return successful response
     return NextResponse.json(
       { 
         success: true, 
