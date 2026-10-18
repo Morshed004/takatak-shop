@@ -127,7 +127,7 @@ export function ProductUpdateForm({ product }: { product: Product }) {
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="flex items-center justify-between">
-        <Button variant="outline" size="sm" asChild className="gap-2">
+        <Button variant="outline" size="sm" className="gap-2">
           <Link href="/dashboard/products">
             <ArrowLeft className="size-4" />
             <span>লিস্টিং পেজে ফিরে যান</span>

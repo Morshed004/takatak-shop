@@ -163,7 +163,6 @@ export async function updateProduct(formData: FormData) {
     const colors = colorsStr.split(",").map((c) => c.trim()).filter(Boolean);
     const sizes = sizesStr.split(",").map((s) => s.trim()).filter(Boolean);
 
-    // Explicitly typed array to prevent implicit any error
     const newVariants: VariantPayload[] = [];
     if (colors.length > 0 || sizes.length > 0) {
       const colorList = colors.length > 0 ? colors : [null];
@@ -176,7 +175,7 @@ export async function updateProduct(formData: FormData) {
       }
     }
 
-    // Database Update using Prisma
+    // Database Update using Prisma Transaction matching your schema (`productVariant`)
     await prisma.$transaction(async (tx) => {
       // 1. Update main product details
       await tx.product.update({
@@ -198,10 +197,10 @@ export async function updateProduct(formData: FormData) {
         });
       }
 
-      // 3. Update variants safely using prisma.variant
+      // 3. Update variants using `tx.productVariant` (matched with your schema model name)
       if (newVariants.length > 0) {
-        await tx.variant.deleteMany({ where: { productId: id } });
-        await tx.variant.createMany({
+        await tx.productVariant.deleteMany({ where: { productId: id } });
+        await tx.productVariant.createMany({
           data: newVariants.map((v) => ({
             color: v.color,
             size: v.size,

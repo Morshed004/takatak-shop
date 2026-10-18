@@ -211,7 +211,7 @@ export default async function ProductsPage({ searchParams }: PageProps) {
                         </TableCell>
 
                         <TableCell className="pr-6 text-right">
-                          <Button size="sm" variant="outline" asChild>
+                          <Button size="sm" variant="outline">
                             <Link href={`/dashboard/products/edit/${product.id}`} className="gap-1.5">
                               <span>Edit Product</span>
                             </Link>
@@ -305,7 +305,7 @@ export default async function ProductsPage({ searchParams }: PageProps) {
                       </div>
                     </div>
 
-                    <Button size="sm" variant="outline" className="w-full" asChild>
+                    <Button size="sm" variant="outline" className="w-full">
                       <Link href={`/dashboard/products/edit/${product.id}`} className="justify-center gap-1.5">
                         <span>Edit Product</span>
                       </Link>
@@ -317,7 +317,7 @@ export default async function ProductsPage({ searchParams }: PageProps) {
 
             {/* Empty State */}
             {filteredProducts.length === 0 && (
-              <div className="flex flex-col items-center justify-center p-8 text-center space-y-2 text-muted-foreground min-h-[200px]">
+              <div className="flex flex-col items-center justify-center p-8 text-center space-y-2 text-muted-foreground min-h-50">
                 <Package className="size-8 stroke-[1.5]" />
                 <p className="text-sm font-medium">No products found</p>
                 <p className="text-xs text-muted-foreground/80">
