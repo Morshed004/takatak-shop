@@ -1,7 +1,7 @@
-import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { prisma } from "@/lib/prisma"; // সরাসরি Prisma import করা হলো
 import {
   Banknote,
   Eye,
@@ -10,11 +10,8 @@ import {
   Truck,
 } from "lucide-react";
 import Link from "next/link";
-import HeroCarousel from "@/components/HeroCarousel"; // Client Component
+import HeroCarousel from "@/components/HeroCarousel";
 
-export const revalidate = 300;
-
-/* ---------- TypeScript Types (Updated to match new schema) ---------- */
 interface ProductImage {
   id: string;
   url: string;
@@ -24,7 +21,7 @@ interface Product {
   id: string;
   name: string;
   description?: string | null;
-  price: number; // Updated: according to new schema
+  price: number;
   images: ProductImage[];
 }
 
@@ -39,7 +36,9 @@ const perks = [
     title: "ক্যাশ অন ডেলিভারি",
     text: "পণ্য হাতে পেয়ে টাকা দিন",
   },
-  { icon: RotateCcw, title: "রিটার্ন", text: "পছন্দ না হলে সহজে ফেরত" },
+  {
+    icon: RotateCcw, title: "রিটার্ন", text: "পছন্দ না হলে সহজে ফেরত"
+  },
   {
     icon: ShieldCheck,
     title: "১০০% অরিজিনাল",
@@ -47,7 +46,6 @@ const perks = [
   },
 ];
 
-// Safe Currency Formatter Function
 const taka = (n?: number | null) => {
   if (n === undefined || n === null || isNaN(n)) {
     return "৳0";
@@ -55,37 +53,28 @@ const taka = (n?: number | null) => {
   return `৳${n.toLocaleString("bn-BD")}`;
 };
 
-// Server-side Data Fetcher Function
+// সরাসরি ডাটাবেজ থেকে ক্যাশড ডাটা ফেচ করার ফাংশন (১০ মিনিট ক্যাশ থাকবে)
 async function getProducts(): Promise<Product[]> {
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
-    
-    const response = await fetch(`${baseUrl}/api/products`, {
-      method: 'GET',
-      headers: {
-        'x-app-secret': process.env.APP_SECRET || '',
+    // Next.js unstable_cache অথবা Prisma ব্যবহার করে সরাসরি ডাটা আনা
+    const products = await prisma.product.findMany({
+      include: {
+        images: true,
       },
-      next: { revalidate: 600 }, 
+      orderBy: {
+        createdAt: 'desc',
+      },
     });
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const result = await response.json();
-
-    if (result.success && Array.isArray(result.data)) {
-      return result.data;
-    }
-
-    console.error("API Error Message:", result.message);
-    return [];
-
+    return products;
   } catch (error) {
-    console.error("Error fetching products via API:", error);
+    console.error("Error fetching products from database:", error);
     return [];
   }
 }
+
+// প্রতি ১০ মিনিট (৬০০ সেকেন্ড) পর পর ডাটা রিভ্যালিডেট হবে
+export const revalidate = 600; 
 
 export default async function HomePage() {
   const products = await getProducts();
@@ -269,7 +258,7 @@ function ProductCard({ p }: { p: Product }) {
             src={imageUrl}
             alt={p.name}
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
-            className="object-cover transition-transform duration-300 group-hover:scale-105"
+            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center text-xs text-muted-foreground">
