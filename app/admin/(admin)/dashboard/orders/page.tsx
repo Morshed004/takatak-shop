@@ -172,7 +172,7 @@ export default async function OrdersPage() {
                           <div className="flex items-center justify-end gap-2">
                             <CopyButton textToCopy={fullInfo} label="Copy" />
                             <Button size="sm" variant="ghost" className="size-8 p-0">
-                              <Link href={`/dashboard/orders/${order.id}`}>
+                              <Link href={`/admin/dashboard/orders/${order.id}`}>
                                 <Eye className="size-4 text-muted-foreground" />
                               </Link>
                             </Button>
@@ -231,7 +231,7 @@ export default async function OrdersPage() {
                       <div className="flex gap-2">
                         <CopyButton textToCopy={fullInfo} label="Copy Info" />
                         <Button size="sm" variant="outline">
-                          <Link href={`/dashboard/orders/${order.id}`}>
+                          <Link href={`/admin/dashboard/orders/${order.id}`}>
                             View Details
                           </Link>
                         </Button>

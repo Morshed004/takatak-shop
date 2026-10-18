@@ -108,7 +108,7 @@ export async function createProduct(formData: FormData) {
     });
 
     revalidatePath('/products');
-    revalidatePath('/dashboard/products');
+    revalidatePath('/admin/dashboard/products');
 
     return { 
       success: true, 
@@ -211,8 +211,8 @@ export async function updateProduct(formData: FormData) {
       }
     });
 
-    revalidatePath("/dashboard/products");
-    revalidatePath(`/dashboard/products/edit/${id}`);
+    revalidatePath("admin/dashboard/products");
+    revalidatePath(`admin/dashboard/products/edit/${id}`);
     revalidatePath(`/product/${id}`);
 
     return { success: true, message: "প্রোডাক্ট সফলভাবে আপডেট হয়েছে!" };
@@ -245,7 +245,7 @@ export async function deleteProduct(productId: string) {
       where: { id: productId },
     });
 
-    revalidatePath("/dashboard/products");
+    revalidatePath("/admin/dashboard/products");
     return { success: true, message: "প্রোডাক্ট এবং ছবি ক্লাউডিনারি থেকে সফলভাবে মুছে ফেলা হয়েছে!" };
   } catch (error: any) {
     console.error("Delete Product Error:", error);

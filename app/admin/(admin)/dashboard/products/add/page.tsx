@@ -62,7 +62,7 @@ const handleSubmit = async (e: React.FormEvent) => {
 
       if (result.success) {
         alert("Product added successfully!");
-        router.push("/dashboard/products");
+        router.push("/admin/dashboard/products");
       } else {
         // Server Action থেকে আসা নির্দিষ্ট এরর মেসেজ দেখাবে
         alert(`Failed: ${result.message}`);

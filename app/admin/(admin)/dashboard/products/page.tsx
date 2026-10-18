@@ -212,7 +212,7 @@ export default async function ProductsPage({ searchParams }: PageProps) {
 
                         <TableCell className="pr-6 text-right">
                           <Button size="sm" variant="outline">
-                            <Link href={`/dashboard/products/edit/${product.id}`} className="gap-1.5">
+                            <Link href={`/admin/dashboard/products/edit/${product.id}`} className="gap-1.5">
                               <span>Edit Product</span>
                             </Link>
                           </Button>
@@ -306,7 +306,7 @@ export default async function ProductsPage({ searchParams }: PageProps) {
                     </div>
 
                     <Button size="sm" variant="outline" className="w-full">
-                      <Link href={`/dashboard/products/edit/${product.id}`} className="justify-center gap-1.5">
+                      <Link href={`/admin/dashboard/products/edit/${product.id}`} className="justify-center gap-1.5">
                         <span>Edit Product</span>
                       </Link>
                     </Button>

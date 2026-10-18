@@ -11,7 +11,7 @@ export type InvoiceOrder = {
 
 /* ---- Store info: নিজের দোকানের তথ্য দিন ---- */
 const STORE = {
-  name: "তাকাটাক",
+  name: "Takatak",
   email: "support@yourshop.com",
   web: "www.yourshop.com",
 };

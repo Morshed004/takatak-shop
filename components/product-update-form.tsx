@@ -115,7 +115,7 @@ export function ProductUpdateForm({ product }: { product: Product }) {
         const res = await deleteProduct(product.id);
         if (res?.success) {
           alert(res.message);
-          router.push("/dashboard/products");
+          router.push("/admin/dashboard/products");
         } else {
           alert("এরর: " + res?.message);
           setIsDeleting(false);
@@ -128,7 +128,7 @@ export function ProductUpdateForm({ product }: { product: Product }) {
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="flex items-center justify-between">
         <Button variant="outline" size="sm" className="gap-2">
-          <Link href="/dashboard/products">
+          <Link href="/admin/dashboard/products">
             <ArrowLeft className="size-4" />
             <span>লিস্টিং পেজে ফিরে যান</span>
           </Link>

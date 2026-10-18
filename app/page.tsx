@@ -91,7 +91,7 @@ export default async function HomePage() {
       <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3.5">
           <Link href="/" className="text-2xl font-black tracking-tight">
-            তাকাটাক<span className="text-primary">.</span>
+            Takatak<span className="text-primary">.</span>
           </Link>
         </div>
       </header>
@@ -184,7 +184,7 @@ export default async function HomePage() {
         <div className="mx-auto grid max-w-7xl gap-8 px-4 py-12 sm:grid-cols-2 md:grid-cols-4">
           <div className="space-y-4">
             <Link href="/" className="text-2xl font-black tracking-tight">
-              তাকাটাক<span className="text-primary">.</span>
+              Takatak<span className="text-primary">.</span>
             </Link>
             <p className="text-sm text-muted-foreground leading-relaxed">
               আমরা আপনাকে দিচ্ছি সর্বোচ্চ কোয়ালিটি ও সঠিক মূল্যের নিশ্চয়তা।
@@ -239,7 +239,7 @@ export default async function HomePage() {
         <Separator />
 
         <div className="mx-auto max-w-7xl px-4 py-6 text-center text-xs text-muted-foreground">
-          © {year} তাকাটাক ডট শপ। সর্বস্বত্ব সংরক্ষিত।
+          © {year} Takatak.shop। সর্বস্বত্ব সংরক্ষিত।
         </div>
       </footer>
     </div>

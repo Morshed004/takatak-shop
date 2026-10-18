@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
 export const metadata = {
-  title: "Dashboard | তাকাটাক",
+  title: "Dashboard | Takatak",
 };
 
 export default function AdminDashboardPage() {
@@ -23,7 +23,7 @@ export default function AdminDashboardPage() {
           </div>
           <div className="flex gap-2">
             <Button size="sm">
-              <Link href="/dashboard/products">প্রোডাক্ট ম্যানেজ করুন</Link>
+              <Link href="/admin/dashboard/products">প্রোডাক্ট ম্যানেজ করুন</Link>
             </Button>
           </div>
         </div>
@@ -76,7 +76,7 @@ export default function AdminDashboardPage() {
           </CardHeader>
           <CardContent className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Link
-              href="/dashboard/products"
+              href="/admin/dashboard/products"
               className="group flex items-center justify-between rounded-lg border p-4 transition-colors hover:border-primary/50 hover:bg-accent/50"
             >
               <div className="flex items-center gap-3">
@@ -96,7 +96,7 @@ export default function AdminDashboardPage() {
             </Link>
 
             <Link
-              href="/dashboard/orders"
+              href="/admin/dashboard/orders"
               className="group flex items-center justify-between rounded-lg border p-4 transition-colors hover:border-primary/50 hover:bg-accent/50"
             >
               <div className="flex items-center gap-3">
