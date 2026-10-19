@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { prisma } from "@/lib/prisma"; // সরাসরি Prisma import করা হলো
+import { prisma } from "@/lib/prisma"; // Direct Prisma import
 import {
   Banknote,
   Eye,
@@ -53,28 +53,27 @@ const taka = (n?: number | null) => {
   return `৳${n.toLocaleString("bn-BD")}`;
 };
 
-// সরাসরি ডাটাবেজ থেকে ক্যাশড ডাটা ফেচ করার ফাংশন (১০ মিনিট ক্যাশ থাকবে)
+// Force dynamic rendering on every request so products shuffle on every reload
+export const dynamic = "force-dynamic";
+
+// Fetch products from database and shuffle them randomly on every request
 async function getProducts(): Promise<Product[]> {
   try {
-    // Next.js unstable_cache অথবা Prisma ব্যবহার করে সরাসরি ডাটা আনা
     const products = await prisma.product.findMany({
       include: {
         images: true,
       },
-      orderBy: {
-        createdAt: 'desc',
-      },
     });
 
-    return products;
+    // Shuffle products array randomly on each reload using Math.random()
+    const shuffledProducts = products.sort(() => Math.random() - 0.5);
+
+    return shuffledProducts;
   } catch (error) {
     console.error("Error fetching products from database:", error);
     return [];
   }
 }
-
-// প্রতি ১০ মিনিট (৬০০ সেকেন্ড) পর পর ডাটা রিভ্যালিডেট হবে
-export const revalidate = 600; 
 
 export default async function HomePage() {
   const products = await getProducts();
