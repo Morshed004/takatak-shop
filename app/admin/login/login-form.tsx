@@ -57,21 +57,8 @@ export default function LoginForm() {
         return;
       }
 
-      const userRole = (
-        session.user as typeof session.user & {
-          role?: string;
-        }
-      ).role;
-
-      if (userRole === "admin") {
-        router.replace("/admin");
-      } else {
-        router.replace("/");
-      }
-
       router.refresh();
     } catch (err) {
-      console.error("Login error:", err);
 
       setError(
         err instanceof Error
