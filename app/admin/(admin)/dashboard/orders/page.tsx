@@ -18,48 +18,46 @@ import {
 } from "@/components/ui/table";
 import { ShoppingBag, Eye, MapPin, Phone, User, FileText } from "lucide-react";
 import Link from "next/link";
+import { prisma } from "@/lib/prisma";
+
 
 export const metadata = {
   title: "Orders",
 };
 
-// Dummy Orders Data (আপনার API / Database অনুযায়ী রিপ্লেস করবেন)
-const mockOrders = [
-  {
-    id: "ORD-1001",
-    customerName: "আব্দুর রহিম",
-    phone: "01712345678",
-    address: "হাউজ ১২, রোড ৫, ব্লক সি, মিরপুর ১০",
-    division: "Dhaka",
-    district: "Dhaka",
-    customerNote: "বিকালের দিকে ডেলিভারি দিলে ভালো হয়।",
-    totalAmount: 1250,
-    status: "Pending",
-    createdAt: "10 Oct, 2026",
-  },
-  {
-    id: "ORD-1002",
-    customerName: "তানজিনা আক্তার",
-    phone: "01898765432",
-    address: "স্টেশন রোড, ধানমন্ডি ৩২",
-    division: "Dhaka",
-    district: "Dhaka",
-    customerNote: "",
-    totalAmount: 2400,
-    status: "Delivered",
-    createdAt: "09 Oct, 2026",
-  },
-];
+// Real database theke orders fetch korar function
+async function getOrders() {
+  try {
+    const orders = await prisma.order.findMany({
+      orderBy: {
+        createdAt: "desc",
+      },
+      include: {
+        items: true, // Jodi order items laghe
+      },
+    });
+    return orders;
+  } catch (error) {
+    console.error("Failed to fetch orders:", error);
+    return [];
+  }
+}
 
 export default async function OrdersPage() {
+  const orders = await getOrders();
+
   const getStatusBadge = (status: string) => {
     switch (status) {
+      case "PENDING":
       case "Pending":
         return <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">Pending</Badge>;
+      case "PROCESSING":
       case "Processing":
         return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">Processing</Badge>;
+      case "DELIVERED":
       case "Delivered":
         return <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200">Delivered</Badge>;
+      case "CANCELLED":
       case "Cancelled":
         return <Badge variant="destructive">Cancelled</Badge>;
       default:
@@ -95,7 +93,7 @@ export default async function OrdersPage() {
                 All Orders
               </CardTitle>
               <CardDescription className="text-xs">
-                Total {mockOrders.length} orders found
+                Total {orders.length} orders found
               </CardDescription>
             </div>
           </CardHeader>
@@ -117,8 +115,13 @@ export default async function OrdersPage() {
                 </TableHeader>
 
                 <TableBody>
-                  {mockOrders.map((order) => {
-                    // কপি করার জন্য পুরো এড্রেস স্ট্রিং
+                  {orders.map((order) => {
+                    const formattedDate = new Date(order.createdAt).toLocaleDateString("en-GB", {
+                      day: "2-digit",
+                      month: "short",
+                      year: "numeric",
+                    });
+
                     const fullInfo = `Name: ${order.customerName}\nPhone: ${order.phone}\nAddress: ${order.address}\nDistrict: ${order.district}, Division: ${order.division}${order.customerNote ? `\nNote: ${order.customerNote}` : ''}`;
 
                     return (
@@ -126,8 +129,8 @@ export default async function OrdersPage() {
                         {/* Order ID & Date */}
                         <TableCell className="pl-6 font-medium">
                           <div>
-                            <span className="font-semibold text-foreground">{order.id}</span>
-                            <p className="text-[11px] text-muted-foreground">{order.createdAt}</p>
+                            <span className="font-semibold text-foreground">{order.orderNumber || order.id}</span>
+                            <p className="text-[11px] text-muted-foreground">{formattedDate}</p>
                           </div>
                         </TableCell>
 
@@ -187,15 +190,21 @@ export default async function OrdersPage() {
 
             {/* MOBILE & TABLET VIEW: Card List */}
             <div className="divide-y lg:hidden">
-              {mockOrders.map((order) => {
+              {orders.map((order) => {
+                const formattedDate = new Date(order.createdAt).toLocaleDateString("en-GB", {
+                  day: "2-digit",
+                  month: "short",
+                  year: "numeric",
+                });
+
                 const fullInfo = `Name: ${order.customerName}\nPhone: ${order.phone}\nAddress: ${order.address}\nDistrict: ${order.district}, Division: ${order.division}${order.customerNote ? `\nNote: ${order.customerNote}` : ''}`;
 
                 return (
                   <div key={order.id} className="p-4 space-y-3">
                     <div className="flex items-center justify-between">
                       <div>
-                        <span className="font-bold text-sm">{order.id}</span>
-                        <span className="text-xs text-muted-foreground ml-2">({order.createdAt})</span>
+                        <span className="font-bold text-sm">{order.orderNumber || order.id}</span>
+                        <span className="text-xs text-muted-foreground ml-2">({formattedDate})</span>
                       </div>
                       <div>{getStatusBadge(order.status)}</div>
                     </div>
@@ -243,7 +252,7 @@ export default async function OrdersPage() {
             </div>
 
             {/* Empty State */}
-            {mockOrders.length === 0 && (
+            {orders.length === 0 && (
               <div className="flex flex-col items-center justify-center p-8 text-center space-y-2 text-muted-foreground min-h-50">
                 <ShoppingBag className="size-8 stroke-[1.5]" />
                 <p className="text-sm font-medium">No orders found</p>

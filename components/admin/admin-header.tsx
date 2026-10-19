@@ -23,8 +23,10 @@ import {
 export function AdminHeader() {
   const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
+  // State to handle mobile menu open/close on navigation
+  const [isOpen, setIsOpen] = useState(false);
 
-  // Prevent hydration mismatch by ensuring component is mounted
+  // Prevent hydration mismatch by ensuring component is mounted on client
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -48,24 +50,30 @@ export function AdminHeader() {
   ];
 
   if (!mounted) {
-    return null; // Avoid rendering until mounted on client
+    return null; // Avoid rendering SSR markup mismatch
   }
 
   return (
-    <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 md:px-8">
+    <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
+      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
         
-        {/* Logo & Admin Badge */}
+        {/* Logo & Admin Badge Section */}
         <div className="flex items-center gap-2">
-          <Link href="/admin/dashboard" className="text-2xl font-bold tracking-tight">
+          <Link 
+            href="/admin/dashboard" 
+            className="text-xl font-bold tracking-tight sm:text-2xl transition-colors hover:opacity-90"
+          >
             Takatak<span className="text-primary">.</span>
           </Link>
-          <Badge variant="secondary" className="text-[10px] uppercase font-semibold px-1.5 py-0.5">
+          <Badge 
+            variant="secondary" 
+            className="px-1.5 py-0.5 text-[10px] font-semibold uppercase"
+          >
             Admin
           </Badge>
         </div>
 
-        {/* Desktop Navigation Links */}
+        {/* Desktop Navigation Links (Visible on medium screens and above) */}
         <nav className="hidden md:flex items-center gap-1">
           {navItems.map((item) => {
             const Icon = item.icon;
@@ -81,7 +89,7 @@ export function AdminHeader() {
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
-                <Link href={item.href} className="flex gap-1">
+                <Link href={item.href} className="flex gap-2">
                   <Icon className="size-4" />
                   <span>{item.label}</span>
                 </Link>
@@ -90,13 +98,13 @@ export function AdminHeader() {
           })}
         </nav>
 
-        {/* Mobile Menu Button */}
+        {/* Mobile Navigation Drawer (Visible on screens smaller than md) */}
         <div className="md:hidden">
-          <Sheet>
+          <Sheet open={isOpen} onOpenChange={setIsOpen}>
             <SheetTrigger>
               <Button variant="outline" size="icon" className="size-9">
                 <Menu className="size-5" />
-                <span className="sr-only">Toggle menu</span>
+                <span className="sr-only">Toggle navigation menu</span>
               </Button>
             </SheetTrigger>
             <SheetContent side="right" className="w-70 sm:w-87.5">
@@ -105,7 +113,9 @@ export function AdminHeader() {
                   Takatak Admin
                 </SheetTitle>
               </SheetHeader>
-              <div className="flex flex-col gap-2 py-4">
+              
+              {/* Mobile Navigation Links */}
+              <div className="flex flex-col gap-1 py-4">
                 {navItems.map((item) => {
                   const Icon = item.icon;
                   const isActive = pathname === item.href;
@@ -113,11 +123,14 @@ export function AdminHeader() {
                     <Button
                       key={item.href}
                       variant={isActive ? "secondary" : "ghost"}
-                      className={`w-full justify-start gap-3 ${
-                        isActive ? "font-semibold" : "text-muted-foreground"
+                      className={`w-full justify-start gap-3 text-sm ${
+                        isActive 
+                          ? "font-semibold bg-muted text-foreground" 
+                          : "text-muted-foreground hover:text-foreground"
                       }`}
+                      onClick={() => setIsOpen(false)} // Close sheet when a menu item is clicked
                     >
-                      <Link href={item.href}>
+                      <Link href={item.href} className="flex gap-2">
                         <Icon className="size-4" />
                         <span>{item.label}</span>
                       </Link>

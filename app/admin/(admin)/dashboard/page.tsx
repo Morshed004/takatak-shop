@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ShoppingBag, DollarSign, Users, Package, ArrowRight } from "lucide-react";
+import { ShoppingBag, DollarSign, Users, Package, ArrowRight, Plus } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
@@ -23,7 +23,9 @@ export default function AdminDashboardPage() {
           </div>
           <div className="flex gap-2">
             <Button size="sm">
-              <Link href="/admin/dashboard/products">প্রোডাক্ট ম্যানেজ করুন</Link>
+              <Link href="/admin/dashboard/products/add" className="flex gap-2">
+              <Plus size={30}  className="text-center text-white"/>
+              প্রোডাক্ট অ্যাড করুন</Link>
             </Button>
           </div>
         </div>
