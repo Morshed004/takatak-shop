@@ -295,9 +295,8 @@ export default function ProductClient() {
       setIsSuccess(true);
       reset(); // Reset form fields
       setQty(1); // Reset quantity
-
     } catch (error: any) {
-      toast.error(error.message || "Something went wrong!")
+      toast.error(error.message || "Something went wrong!");
     } finally {
       setIsSubmitting(false);
     }
@@ -333,20 +332,27 @@ export default function ProductClient() {
             <Check className="size-8" />
           </div>
           <div className="space-y-2">
-            <h1 className="text-2xl font-bold tracking-tight">Order Placed Successfully!</h1>
+            <h1 className="text-2xl font-bold tracking-tight">
+              Order Placed Successfully!
+            </h1>
             <p className="text-sm text-muted-foreground">
-              Thank you for your order. We have received your payment information and will verify your TrxID shortly.
+              Thank you for your order. We have received your payment
+              information and will verify your TrxID shortly.
             </p>
           </div>
 
           <div className="rounded-2xl bg-muted/50 p-4 text-left space-y-2 text-sm">
             <div className="flex justify-between">
               <span className="text-muted-foreground">Order Number:</span>
-              <span className="font-mono font-bold text-foreground">{successOrderInfo.orderNumber}</span>
+              <span className="font-mono font-bold text-foreground">
+                {successOrderInfo.orderNumber}
+              </span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Total Amount:</span>
-              <span className="font-bold text-primary">{taka(successOrderInfo.total)}</span>
+              <span className="font-bold text-primary">
+                {taka(successOrderInfo.total)}
+              </span>
             </div>
           </div>
 
@@ -973,9 +979,34 @@ export default function ProductClient() {
             </div>
 
             <div className="mt-4 sm:mt-6 rounded-2xl border bg-card p-4 sm:p-6 md:p-8 text-xs sm:text-sm md:text-base leading-relaxed text-foreground whitespace-pre-line prose dark:prose-invert">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                {product.description}
-              </ReactMarkdown>
+              <div
+                className="
+  prose 
+  dark:prose-invert 
+  max-w-none 
+  text-foreground 
+  
+  /* Headings-এর জন্য Shadcn Foreground কালার */
+  [&_h1]:text-foreground [&_h2]:text-foreground [&_h3]:text-foreground 
+  
+  /* Strong / Bold Text-এর জন্য Shadcn Primary বা Foreground কালার */
+  [&_strong]:text-foreground 
+  
+  /* Links-এর জন্য Shadcn Primary কালার */
+  [&_a]:text-primary 
+  
+  /* Spacing কমানোর জন্য CSS Overrides */
+  [&_p]:my-1.5 
+  [&_ul]:my-1.5 
+  [&_li]:my-0.5 
+  [&_h1]:mb-3 [&_h1]:mt-4 
+  [&_h3]:mb-1.5 [&_h3]:mt-3
+"
+              >
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  {product.description}
+                </ReactMarkdown>
+              </div>
             </div>
           </div>
         )}
