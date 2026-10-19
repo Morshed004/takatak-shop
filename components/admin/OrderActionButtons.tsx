@@ -12,9 +12,15 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
 
 // OrderStatus type definition
-type OrderStatus = "PENDING" | "PROCESSING" | "SHIPPED" | "DELIVERED" | "CANCELLED";
+type OrderStatus =
+  | "PENDING"
+  | "PROCESSING"
+  | "SHIPPED"
+  | "DELIVERED"
+  | "CANCELLED";
 
 interface Props {
   orderId: string;
@@ -56,14 +62,14 @@ export default function OrderActionButtons({ orderId, currentStatus }: Props) {
         setSelectedReason("");
         setCustomReason("");
       } else {
-        alert(res.message);
+        toast.error(res.message);
       }
     });
   };
 
   const handleCancelSubmit = () => {
     if (!selectedReason) {
-      alert("Please select a reason for cancellation.");
+      toast.warning("Please select a reason for cancellation.");
       return;
     }
 
@@ -73,7 +79,7 @@ export default function OrderActionButtons({ orderId, currentStatus }: Props) {
         : selectedReason;
 
     if (!finalReason) {
-      alert("Please specify the cancellation reason.");
+      toast.warning("Please specify the cancellation reason.");
       return;
     }
 
@@ -137,13 +143,15 @@ export default function OrderActionButtons({ orderId, currentStatus }: Props) {
       <Dialog open={openCancelModal} onOpenChange={setOpenCancelModal}>
         <DialogContent className="sm:max-w-106.25">
           <DialogHeader>
-            <DialogTitle className="text-base font-bold">Cancel Order</DialogTitle>
+            <DialogTitle className="text-base font-bold">
+              Cancel Order
+            </DialogTitle>
           </DialogHeader>
           <div className="space-y-3 py-2">
             <label className="text-xs font-medium text-muted-foreground block">
               Select reason for cancellation:
             </label>
-            
+
             {/* Dropdown for selecting pre-defined cancellation reasons */}
             <select
               value={selectedReason}
@@ -184,7 +192,9 @@ export default function OrderActionButtons({ orderId, currentStatus }: Props) {
               disabled={isPending}
               onClick={handleCancelSubmit}
             >
-              {isPending && <Loader2 className="size-3.5 animate-spin mr-1.5" />}
+              {isPending && (
+                <Loader2 className="size-3.5 animate-spin mr-1.5" />
+              )}
               Confirm Cancellation
             </Button>
           </DialogFooter>

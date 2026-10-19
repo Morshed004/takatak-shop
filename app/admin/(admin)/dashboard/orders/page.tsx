@@ -38,7 +38,6 @@ async function getOrders() {
     });
     return orders;
   } catch (error) {
-    console.error("Failed to fetch orders:", error);
     return [];
   }
 }

@@ -131,7 +131,6 @@ async function getDashboardData() {
       mostSoldProducts,
     };
   } catch (error) {
-    console.error("Error fetching dashboard analytics:", error);
     return {
       totalRevenue: 0,
       totalOrders: 0,

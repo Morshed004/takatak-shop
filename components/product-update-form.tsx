@@ -18,6 +18,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { updateProduct, deleteProduct } from "@/app/actions/product";
+import { toast } from "sonner";
 
 type ProductImage = {
   id: string;
@@ -46,18 +47,20 @@ export function ProductUpdateForm({ product }: { product: Product }) {
   const [price, setPrice] = useState<number | string>(product?.price || "");
 
   const existingColors = Array.from(
-    new Set(product?.variants?.map((v) => v.color).filter(Boolean))
+    new Set(product?.variants?.map((v) => v.color).filter(Boolean)),
   ).join(", ");
 
   const existingSizes = Array.from(
-    new Set(product?.variants?.map((v) => v.size).filter(Boolean))
+    new Set(product?.variants?.map((v) => v.size).filter(Boolean)),
   ).join(", ");
 
   const [colors, setColors] = useState(existingColors);
   const [sizes, setSizes] = useState(existingSizes);
 
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const initialImages = product?.images ? product.images.map((img) => img.url) : [];
+  const initialImages = product?.images
+    ? product.images.map((img) => img.url)
+    : [];
   const [previewUrls, setPreviewUrls] = useState<string[]>(initialImages);
 
   const [isPending, startTransition] = useTransition();
@@ -96,9 +99,9 @@ export function ProductUpdateForm({ product }: { product: Product }) {
     startTransition(async () => {
       const res = await updateProduct(formData);
       if (res?.success) {
-        alert(res.message);
+        toast.success(res.message);
       } else {
-        alert("এরর: " + (res?.message || "আপডেট করা সম্ভব হয়নি।"));
+        toast.error("Error: " + (res?.message || "আপডেট করা সম্ভব হয়নি।"));
       }
     });
   };
@@ -106,7 +109,7 @@ export function ProductUpdateForm({ product }: { product: Product }) {
   // Confirm and Delete Handler
   const handleDelete = () => {
     const isConfirmed = window.confirm(
-      `আপনি কি নিশ্চিত যে "${product.name}" ডিলিট করতে চান? ক্লাউডিনারি থেকেও ছবি মুছে যাবে!`
+      `আপনি কি নিশ্চিত যে "${product.name}" ডিলিট করতে চান? ক্লাউডিনারি থেকেও ছবি মুছে যাবে!`,
     );
 
     if (isConfirmed) {
@@ -114,10 +117,10 @@ export function ProductUpdateForm({ product }: { product: Product }) {
       startTransition(async () => {
         const res = await deleteProduct(product.id);
         if (res?.success) {
-          alert(res.message);
+          toast.success(res.message);
           router.push("/admin/dashboard/products");
         } else {
-          alert("এরর: " + res?.message);
+          toast.error("Error: " + res?.message);
           setIsDeleting(false);
         }
       });
@@ -145,10 +148,16 @@ export function ProductUpdateForm({ product }: { product: Product }) {
             className="gap-2 cursor-pointer"
           >
             <Trash2 className="size-4" />
-            <span>{isDeleting ? "মুছে ফেলা হচ্ছে..." : "প্রোডাক্ট ডিলিট করুন"}</span>
+            <span>
+              {isDeleting ? "মুছে ফেলা হচ্ছে..." : "প্রোডাক্ট ডিলিট করুন"}
+            </span>
           </Button>
 
-          <Button type="submit" disabled={isPending || isDeleting} className="gap-2 cursor-pointer">
+          <Button
+            type="submit"
+            disabled={isPending || isDeleting}
+            className="gap-2 cursor-pointer"
+          >
             <Save className="size-4" />
             <span>{isPending ? "আপডেট হচ্ছে..." : "সেভ ও আপডেট করুন"}</span>
           </Button>
@@ -159,7 +168,9 @@ export function ProductUpdateForm({ product }: { product: Product }) {
         <div className="space-y-6 md:col-span-2">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base font-semibold">প্রোডাক্ট তথ্য (Edit Product)</CardTitle>
+              <CardTitle className="text-base font-semibold">
+                প্রোডাক্ট তথ্য (Edit Product)
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
@@ -188,7 +199,9 @@ export function ProductUpdateForm({ product }: { product: Product }) {
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-base font-semibold">ছবি আপলোড (Images)</CardTitle>
+              <CardTitle className="text-base font-semibold">
+                ছবি আপলোড (Images)
+              </CardTitle>
               <CardDescription className="text-xs">
                 নতুন ছবি যুক্ত করলে তা Cloudinary-তে আপলোড হবে।
               </CardDescription>
@@ -197,7 +210,10 @@ export function ProductUpdateForm({ product }: { product: Product }) {
               {previewUrls.length > 0 && (
                 <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
                   {previewUrls.map((url, idx) => (
-                    <div key={idx} className="group relative aspect-square overflow-hidden rounded-lg border bg-muted">
+                    <div
+                      key={idx}
+                      className="group relative aspect-square overflow-hidden rounded-lg border bg-muted"
+                    >
                       <NextImage
                         src={url}
                         alt="Product Preview"
@@ -219,7 +235,10 @@ export function ProductUpdateForm({ product }: { product: Product }) {
 
               <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-6 text-center">
                 <Upload className="size-6 text-muted-foreground mb-2" />
-                <Label htmlFor="image-upload" className="cursor-pointer text-sm font-medium text-primary hover:underline">
+                <Label
+                  htmlFor="image-upload"
+                  className="cursor-pointer text-sm font-medium text-primary hover:underline"
+                >
                   নতুন ছবি যোগ করতে এখানে ক্লিক করুন
                 </Label>
                 <Input
@@ -238,7 +257,9 @@ export function ProductUpdateForm({ product }: { product: Product }) {
         <div className="space-y-6">
           <Card className="border-primary/30 bg-primary/5">
             <CardHeader>
-              <CardTitle className="text-base font-semibold text-primary">মূল্য (Price) *</CardTitle>
+              <CardTitle className="text-base font-semibold text-primary">
+                মূল্য (Price) *
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <Input
@@ -254,14 +275,18 @@ export function ProductUpdateForm({ product }: { product: Product }) {
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-sm font-semibold">ভ্যারিয়েন্ট (Variants Options)</CardTitle>
+              <CardTitle className="text-sm font-semibold">
+                ভ্যারিয়েন্ট (Variants Options)
+              </CardTitle>
               <CardDescription className="text-xs">
                 কমা (,) দিয়ে আলাদা করে একাধিক অপশন লিখুন।
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-1.5">
-                <Label htmlFor="colors" className="text-xs">রং (Colors)</Label>
+                <Label htmlFor="colors" className="text-xs">
+                  রং (Colors)
+                </Label>
                 <Input
                   id="colors"
                   placeholder="Black, White, Blue"
@@ -272,7 +297,9 @@ export function ProductUpdateForm({ product }: { product: Product }) {
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="sizes" className="text-xs">সাইজ (Sizes)</Label>
+                <Label htmlFor="sizes" className="text-xs">
+                  সাইজ (Sizes)
+                </Label>
                 <Input
                   id="sizes"
                   placeholder="M, L, XL, XXL"

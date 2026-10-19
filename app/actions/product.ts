@@ -27,7 +27,6 @@ function getPublicIdFromUrl(url: string) {
     const publicId = fullPath.substring(0, fullPath.lastIndexOf('.'));
     return publicId;
   } catch (error) {
-    console.error('Error extracting Public ID:', error);
     return null;
   }
 }
@@ -117,7 +116,6 @@ export async function createProduct(formData: FormData) {
     };
 
   } catch (error: any) {
-    console.error('Server Action Error:', error);
     return { 
       success: false, 
       message: error.message || 'Internal Server Error' 
@@ -217,7 +215,6 @@ export async function updateProduct(formData: FormData) {
 
     return { success: true, message: "প্রোডাক্ট সফলভাবে আপডেট হয়েছে!" };
   } catch (error: any) {
-    console.error("Update Product Error:", error);
     return { success: false, message: error.message || "আপডেট ব্যর্থ হয়েছে।" };
   }
 }
@@ -248,7 +245,6 @@ export async function deleteProduct(productId: string) {
     revalidatePath("/admin/dashboard/products");
     return { success: true, message: "প্রোডাক্ট এবং ছবি ক্লাউডিনারি থেকে সফলভাবে মুছে ফেলা হয়েছে!" };
   } catch (error: any) {
-    console.error("Delete Product Error:", error);
     return { success: false, message: error.message || "ডিলিট করা সম্ভব হয়নি।" };
   }
 }

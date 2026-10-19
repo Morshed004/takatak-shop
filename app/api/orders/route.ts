@@ -38,7 +38,6 @@ async function sendTelegramNotification(orderData: any) {
   const chatId = process.env.TELEGRAM_CHAT_ID;
 
   if (!token || !chatId) {
-    console.error("Telegram token or chat ID is missing in env!");
     return;
   }
 
@@ -70,7 +69,6 @@ async function sendTelegramNotification(orderData: any) {
       }),
     });
   } catch (error) {
-    console.error("Failed to send telegram notification:", error);
   }
 }
 
@@ -191,7 +189,6 @@ export async function POST(req: Request) {
     );
 
   } catch (error: any) {
-    console.error("Order submission error:", error);
     return NextResponse.json(
       { success: false, message: "Internal server error. Please try again later." },
       { status: 500 }

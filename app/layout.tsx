@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { Noto_Sans_Bengali } from "next/font/google";
-import { Toaster } from "sonner";
+import { Toaster } from "@/components/ui/sonner";
 
 const font = Noto_Sans_Bengali({
   subsets: ["bengali", "latin"],

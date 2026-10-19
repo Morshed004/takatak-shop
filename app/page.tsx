@@ -67,7 +67,6 @@ async function getProducts(): Promise<Product[]> {
 
     return shuffledProducts;
   } catch (error) {
-    console.error("Error fetching products from database:", error);
     return [];
   }
 }

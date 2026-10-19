@@ -39,6 +39,7 @@ import remarkGfm from "remark-gfm";
 import { z } from "zod";
 
 import bangladeshDistrictsData from "../../../lib/bangladeshDistrictsData";
+import { toast } from "sonner";
 
 interface ProductImage {
   id: string;
@@ -182,7 +183,7 @@ export default function ProductClient() {
           }
         }
       } catch (error) {
-        console.error("Error fetching product:", error);
+        toast.error("Error fetching product");
       } finally {
         setLoading(false);
       }
@@ -238,12 +239,12 @@ export default function ProductClient() {
   const onSubmit = async (data: OrderFormValues) => {
     // Variant checks
     if (availableColors.length > 0 && !selectedColor) {
-      alert("Please select a product color.");
+      toast.warning("Please select a product color");
       return;
     }
 
     if (availableSizes.length > 0 && !selectedSize) {
-      alert("Please select a product size.");
+      toast.warning("Please select a product size.");
       return;
     }
 
@@ -296,8 +297,7 @@ export default function ProductClient() {
       setQty(1); // Reset quantity
 
     } catch (error: any) {
-      console.error("Error:", error);
-      alert(error.message || "Something went wrong!");
+      toast.error(error.message || "Something went wrong!")
     } finally {
       setIsSubmitting(false);
     }

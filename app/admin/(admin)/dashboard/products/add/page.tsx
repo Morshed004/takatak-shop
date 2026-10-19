@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { X, Upload, Loader2 } from "lucide-react";
 import { createProduct } from "@/app/actions/product"; // Import Server Action
+import { toast } from "sonner";
 
 export default function AddProductPage() {
   const router = useRouter();
@@ -18,8 +19,8 @@ export default function AddProductPage() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
-  const [colors, setColors] = useState(""); 
-  const [sizes, setSizes] = useState("");   
+  const [colors, setColors] = useState("");
+  const [sizes, setSizes] = useState("");
   const [images, setImages] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
 
@@ -41,7 +42,7 @@ export default function AddProductPage() {
   };
 
   // Handle form submission via Server Action
-const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
@@ -61,16 +62,15 @@ const handleSubmit = async (e: React.FormEvent) => {
       const result = await createProduct(formData);
 
       if (result.success) {
-        alert("Product added successfully!");
+        toast.success("Product added successfully!");
         router.push("/admin/dashboard/products");
       } else {
         // Server Action থেকে আসা নির্দিষ্ট এরর মেসেজ দেখাবে
-        alert(`Failed: ${result.message}`);
+        toast.error(`Failed: ${result.message}`);
       }
     } catch (error: any) {
-      console.error("Client Error Detail:", error);
       // নির্দিষ্ট কোড বা টেক্সট এরর দেখাবে
-      alert(`Error: ${error?.message || "An unexpected error occurred"}`);
+      toast.error(`Error: ${error?.message || "An unexpected error occurred"}`);
     } finally {
       setLoading(false);
     }
@@ -84,7 +84,6 @@ const handleSubmit = async (e: React.FormEvent) => {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
-            
             {/* Product Title */}
             <div className="space-y-2">
               <Label htmlFor="title">Product Title *</Label>
@@ -127,7 +126,12 @@ const handleSubmit = async (e: React.FormEvent) => {
             {/* Optional Fields: Colors & Sizes */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="colors">Colors <span className="text-muted-foreground text-xs">(Optional, comma separated)</span></Label>
+                <Label htmlFor="colors">
+                  Colors{" "}
+                  <span className="text-muted-foreground text-xs">
+                    (Optional, comma separated)
+                  </span>
+                </Label>
                 <Input
                   id="colors"
                   type="text"
@@ -138,7 +142,12 @@ const handleSubmit = async (e: React.FormEvent) => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="sizes">Sizes <span className="text-muted-foreground text-xs">(Optional, comma separated)</span></Label>
+                <Label htmlFor="sizes">
+                  Sizes{" "}
+                  <span className="text-muted-foreground text-xs">
+                    (Optional, comma separated)
+                  </span>
+                </Label>
                 <Input
                   id="sizes"
                   type="text"
@@ -161,10 +170,17 @@ const handleSubmit = async (e: React.FormEvent) => {
                   className="hidden"
                   onChange={handleImageChange}
                 />
-                <label htmlFor="image-upload" className="cursor-pointer flex flex-col items-center justify-center space-y-2">
+                <label
+                  htmlFor="image-upload"
+                  className="cursor-pointer flex flex-col items-center justify-center space-y-2"
+                >
                   <Upload className="w-8 h-8 text-muted-foreground" />
-                  <span className="text-sm font-medium">Click to upload images</span>
-                  <span className="text-xs text-muted-foreground">PNG, JPG, WEBP</span>
+                  <span className="text-sm font-medium">
+                    Click to upload images
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    PNG, JPG, WEBP
+                  </span>
                 </label>
               </div>
 
@@ -172,8 +188,15 @@ const handleSubmit = async (e: React.FormEvent) => {
               {imagePreviews.length > 0 && (
                 <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4 mt-4">
                   {imagePreviews.map((src, index) => (
-                    <div key={index} className="relative group aspect-square rounded-md overflow-hidden border">
-                      <img src={src} alt="Preview" className="w-full h-full object-cover" />
+                    <div
+                      key={index}
+                      className="relative group aspect-square rounded-md overflow-hidden border"
+                    >
+                      <img
+                        src={src}
+                        alt="Preview"
+                        className="w-full h-full object-cover"
+                      />
                       <button
                         type="button"
                         onClick={() => handleRemoveImage(index)}
@@ -191,13 +214,13 @@ const handleSubmit = async (e: React.FormEvent) => {
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Adding Product...
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Adding
+                  Product...
                 </>
               ) : (
                 "Add Product"
               )}
             </Button>
-
           </form>
         </CardContent>
       </Card>
