@@ -6,70 +6,49 @@ interface Props {
   params: Promise<{ id: string }>;
 }
 
-// 1. Generate static params for all product IDs at build time using Prisma directly
-export async function generateStaticParams() {
-  try {
-    // Direct database query (No HTTP fetch / localhost needed)
-    const products = await prisma.product.findMany({
-      select: { id: true },
-    });
-
-    if (Array.isArray(products)) {
-      return products.map((product) => ({
-        id: product.id.toString(),
-      }));
-    }
-  } catch (error) {
-    console.error("Error generating static params from DB:", error);
-  }
-
-  return [];
-}
-
-// 2. Revalidate the page every 300 seconds (5 minutes) in the background
+// Revalidate the page every 300 seconds (5 minutes) in the background
 export const revalidate = 300;
 
-// Generate dynamic metadata for SEO and OpenGraph sharing
+// Generate dynamic metadata for SEO and OpenGraph sharing using Prisma directly at build/runtime
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
 
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
-    const response = await fetch(`${baseUrl}/api/products`, {
-      headers: {
-        'x-app-secret': process.env.NEXT_PUBLIC_APP_SECRET || '',
-      },
-      next: { revalidate: 300 }
+    // Fetch product directly from the database to avoid build-time fetch errors (ECONNREFUSED)
+    const product = await prisma.product.findUnique({
+      where: { id },
     });
 
-    const result = await response.json();
-    if (result.success && Array.isArray(result.data)) {
-      const product = result.data.find((p: any) => p.id === id) || result.data[0];
+    if (product) {
+      // Safe check for images array or JSON structure
+      const images = (product as any).images;
+      const imageUrl = Array.isArray(images) && images.length > 0 ? images[0]?.url || "" : "";
       
-      if (product) {
-        const imageUrl = product.images?.[0]?.url || "";
-        return {
-          title: `${product.name} | Your Shop Name`,
-          description: product.description ? product.description.substring(0, 160) : "Order with cash on delivery at the best price.",
-          openGraph: {
-            title: product.name,
-            description: product.description ? product.description.substring(0, 160) : "",
-            images: imageUrl ? [{ url: imageUrl }] : [],
-            type: "website",
-          },
-        };
-      }
+      return {
+        title: `${product.name} | Takatak Shop`,
+        description: product.description ? product.description.substring(0, 160) : "Order with cash on delivery at the best price.",
+        openGraph: {
+          title: product.name,
+          description: product.description ? product.description.substring(0, 160) : "",
+          images: imageUrl ? [{ url: imageUrl }] : [],
+          type: "website",
+        },
+      };
     }
   } catch (error) {
-    console.error("Error generating metadata:", error);
+    console.error("Error generating metadata from DB:", error);
   }
 
+  // Fallback metadata if product is not found or an error occurs
   return {
-    title: "Product Details | Your Shop Name",
+    title: "Product Details | Takatak Shop",
     description: "Buy products online with cash on delivery.",
   };
 }
 
-export default function Page() {
-  return <ProductClient />;
+export default async function Page({ params }: Props) {
+  const { id } = await params;
+  
+  // Pass the id prop down to the client component
+  return <ProductClient  />;
 }
