@@ -1,28 +1,26 @@
 import { Metadata } from "next";
 import ProductClient from "./ProductClient";
+import { prisma } from "@/lib/prisma";
 
 interface Props {
   params: Promise<{ id: string }>;
 }
 
-// 1. Generate static params for all 100+ product IDs at build time
+// 1. Generate static params for all product IDs at build time using Prisma directly
 export async function generateStaticParams() {
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
-    const response = await fetch(`${baseUrl}/api/products`, {
-      headers: {
-        'x-app-secret': process.env.NEXT_PUBLIC_APP_SECRET || '',
-      },
+    // Direct database query (No HTTP fetch / localhost needed)
+    const products = await prisma.product.findMany({
+      select: { id: true },
     });
 
-    const result = await response.json();
-    if (result.success && Array.isArray(result.data)) {
-      return result.data.map((product: any) => ({
+    if (Array.isArray(products)) {
+      return products.map((product) => ({
         id: product.id.toString(),
       }));
     }
   } catch (error) {
-    console.error("Error generating static params:", error);
+    console.error("Error generating static params from DB:", error);
   }
 
   return [];
