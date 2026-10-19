@@ -1,4 +1,4 @@
-import { formatPrice } from "@/lib/businesskoro";
+import { formatPrice } from "@/lib/formatPrice";
 import { prisma } from "@/lib/prisma";
 import {
   ImageIcon,

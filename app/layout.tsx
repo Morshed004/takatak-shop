@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { Noto_Sans_Bengali } from "next/font/google";
+import { Toaster } from "sonner";
 
 const font = Noto_Sans_Bengali({
   subsets: ["bengali", "latin"],
@@ -71,6 +72,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={cn("h-full", "antialiased", "font-sans")}>
       <body className={font.className}>{children}</body>
+      <Toaster position="top-center"/>
     </html>
   );
 }
