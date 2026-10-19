@@ -151,7 +151,7 @@ export default function ProductClient() {
       if (!productId) return;
       try {
         const baseUrl =
-          process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+          process.env.NEXT_PUBLIC_API_URL;
         const response = await fetch(`${baseUrl}/api/products`, {
           method: "GET",
           headers: {
