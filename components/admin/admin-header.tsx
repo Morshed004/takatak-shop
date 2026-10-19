@@ -3,12 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  LayoutDashboard,
-  Package,
-  ShoppingBag,
-  Menu,
-} from "lucide-react";
+import { LayoutDashboard, Package, ShoppingBag, Menu } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -19,6 +14,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import Image from "next/image";
 
 export function AdminHeader() {
   const pathname = usePathname();
@@ -56,17 +52,25 @@ export function AdminHeader() {
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
-        
         {/* Logo & Admin Badge Section */}
         <div className="flex items-center gap-2">
-          <Link 
-            href="/admin/dashboard" 
-            className="text-xl font-bold tracking-tight sm:text-2xl transition-colors hover:opacity-90"
-          >
-            Takatak<span className="text-primary">.</span>
+          <Link href="/" className="flex items-center gap-3 group">
+            {/* লোগো ইমেজ */}
+            <div className="relative w-9 h-9 overflow-hidden rounded-xl shadow-sm transition-transform group-hover:scale-105">
+              <Image
+                src="/logo.png"
+                alt="Takatak Logo"
+                fill
+                className="object-cover"
+              />
+            </div>
+            {/* টেক্সট */}
+            <span className="text-2xl font-black tracking-tight">
+              Takatak<span className="text-primary">.</span>
+            </span>
           </Link>
-          <Badge 
-            variant="secondary" 
+          <Badge
+            variant="secondary"
             className="px-1.5 py-0.5 text-[10px] font-semibold uppercase"
           >
             Admin
@@ -113,7 +117,7 @@ export function AdminHeader() {
                   Takatak Admin
                 </SheetTitle>
               </SheetHeader>
-              
+
               {/* Mobile Navigation Links */}
               <div className="flex flex-col gap-1 py-4">
                 {navItems.map((item) => {
@@ -124,8 +128,8 @@ export function AdminHeader() {
                       key={item.href}
                       variant={isActive ? "secondary" : "ghost"}
                       className={`w-full justify-start gap-3 text-sm ${
-                        isActive 
-                          ? "font-semibold bg-muted text-foreground" 
+                        isActive
+                          ? "font-semibold bg-muted text-foreground"
                           : "text-muted-foreground hover:text-foreground"
                       }`}
                       onClick={() => setIsOpen(false)} // Close sheet when a menu item is clicked
@@ -141,7 +145,6 @@ export function AdminHeader() {
             </SheetContent>
           </Sheet>
         </div>
-
       </div>
     </header>
   );

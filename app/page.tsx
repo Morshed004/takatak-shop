@@ -2,15 +2,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { prisma } from "@/lib/prisma"; // Direct Prisma import
-import {
-  Banknote,
-  Eye,
-  RotateCcw,
-  ShieldCheck,
-  Truck,
-} from "lucide-react";
+import { Banknote, Eye, RotateCcw, ShieldCheck, Truck } from "lucide-react";
 import Link from "next/link";
 import HeroCarousel from "@/components/HeroCarousel";
+import Image from "next/image";
 
 interface ProductImage {
   id: string;
@@ -37,7 +32,9 @@ const perks = [
     text: "পণ্য হাতে পেয়ে টাকা দিন",
   },
   {
-    icon: RotateCcw, title: "রিটার্ন", text: "পছন্দ না হলে সহজে ফেরত"
+    icon: RotateCcw,
+    title: "রিটার্ন",
+    text: "পছন্দ না হলে সহজে ফেরত",
   },
   {
     icon: ShieldCheck,
@@ -89,8 +86,20 @@ export default async function HomePage() {
       {/* 2. Simplified Navbar */}
       <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3.5">
-          <Link href="/" className="text-2xl font-black tracking-tight">
-            Takatak<span className="text-primary">.</span>
+          <Link href="/" className="flex items-center gap-3 group">
+            {/* লোগো ইমেজ */}
+            <div className="relative w-9 h-9 overflow-hidden rounded-xl shadow-sm transition-transform group-hover:scale-105">
+              <Image
+                src="/logo.png"
+                alt="Takatak Logo"
+                fill
+                className="object-cover"
+              />
+            </div>
+            {/* টেক্সট */}
+            <span className="text-2xl font-black tracking-tight">
+              Takatak<span className="text-primary">.</span>
+            </span>
           </Link>
         </div>
       </header>
@@ -180,48 +189,34 @@ export default async function HomePage() {
 
       {/* 7. Footer Section */}
       <footer className="bg-card border-t text-card-foreground">
-        <div className="mx-auto grid max-w-7xl gap-8 px-4 py-12 sm:grid-cols-2 md:grid-cols-4">
+        <div className="mx-auto grid max-w-7xl gap-8 px-4 py-12 sm:grid-cols-2 md:grid-cols-3">
           <div className="space-y-4">
-            <Link href="/" className="text-2xl font-black tracking-tight">
+            <Link href="/" className="flex items-center gap-3 group">
+            {/* লোগো ইমেজ */}
+            <div className="relative w-9 h-9 overflow-hidden rounded-xl shadow-sm transition-transform group-hover:scale-105">
+              <Image
+                src="/logo.png"
+                alt="Takatak Logo"
+                fill
+                className="object-cover"
+              />
+            </div>
+            {/* টেক্সট */}
+            <span className="text-2xl font-black tracking-tight">
               Takatak<span className="text-primary">.</span>
-            </Link>
+            </span>
+          </Link>
             <p className="text-sm text-muted-foreground leading-relaxed">
               আমরা আপনাকে দিচ্ছি সর্বোচ্চ কোয়ালিটি ও সঠিক মূল্যের নিশ্চয়তা।
             </p>
           </div>
 
           <div>
-            <h5 className="font-bold mb-4 text-sm">সহায়ক লিংক</h5>
-            <ul className="space-y-2.5 text-sm text-muted-foreground">
-              <li>
-                <Link href="#" className="hover:text-primary">
-                  অর্ডার ট্র্যাক করুন
-                </Link>
-              </li>
-              <li>
-                <Link href="#" className="hover:text-primary">
-                  শপ ক্যাটালগ
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          <div>
             <h5 className="font-bold mb-4 text-sm">গ্রাহক সেবা</h5>
             <ul className="space-y-2.5 text-sm text-muted-foreground">
               <li>
-                <Link href="#" className="hover:text-primary">
+                <Link href="/return-policy" className="hover:text-primary">
                   রিটার্ন নীতি
-                </Link>
-              </li>
-              <li>
-                <Link href="#" className="hover:text-primary">
-                  ডেলিভারি তথ্য
-                </Link>
-              </li>
-              <li>
-                <Link href="#" className="hover:text-primary">
-                  যোগাযোগ
                 </Link>
               </li>
             </ul>

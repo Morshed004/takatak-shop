@@ -72,9 +72,9 @@ const deliveryCharges = {
 
 // Merchant or personal numbers for receiving delivery charge advance
 const merchantNumbers = {
-  bkash: "01700000000",
-  nagad: "01800000000",
-  rocket: "01900000000",
+  bkash: "01927537990",
+  nagad: "01609090571",
+  rocket: "016090905714",
 };
 
 // Zod Validation Schema definition

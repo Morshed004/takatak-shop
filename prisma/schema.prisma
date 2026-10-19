@@ -81,11 +81,12 @@ enum PaymentStatus {
 }
 
 model Order {
-  id           String        @id @default(cuid())
-  orderNumber  String        @unique
-  totalAmount  Float         // Total amount including product price and shipping cost
-  shippingCost Float         // Delivery charge amount
-  status       OrderStatus   @default(PENDING)
+  id           String      @id @default(cuid())
+  orderNumber  String      @unique
+  totalAmount  Float
+  shippingCost Float
+  status       OrderStatus @default(PENDING)
+  cancelReason String?     @db.Text
 
   customerName String
   phone        String
