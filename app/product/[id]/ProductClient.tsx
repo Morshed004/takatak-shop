@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useQuery } from "@tanstack/react-query"; // Import TanStack Query[cite: 2]
+import { useQuery } from "@tanstack/react-query"; // Import TanStack Query
 import {
   ArrowRight,
   Banknote,
@@ -64,6 +64,10 @@ interface Product {
   variants: Variant[];
 }
 
+interface ProductClientProps {
+  initialProduct: Product;
+}
+
 const bn = (n: number) => n.toLocaleString("bn-BD");
 const taka = (n: number) => `৳${bn(n)}`;
 
@@ -86,7 +90,11 @@ const orderFormSchema = z.object({
   customerPhone: z
     .string()
     .regex(phoneRegex, "Invalid 11-digit mobile number."),
-  customerEmail: z.email("Invalid email address.").optional().or(z.literal("")),
+  customerEmail: z
+    .string()
+    .email("Invalid email address.")
+    .optional()
+    .or(z.literal("")),
   selectedZila: z.string().min(1, "Zila is required."),
   selectedThana: z.string().optional(),
   fullAddress: z.string().min(5, "Full address is required."),
@@ -98,7 +106,7 @@ const orderFormSchema = z.object({
 
 type OrderFormValues = z.infer<typeof orderFormSchema>;
 
-export default function ProductClient() {
+export default function ProductClient({ initialProduct }: ProductClientProps) {
   const params = useParams();
   const productId = params?.id as string;
 
@@ -144,44 +152,27 @@ export default function ProductClient() {
   const selectedZila = watch("selectedZila");
   const paymentMethod = watch("paymentMethod");
 
-  // Fetch product data using TanStack Query with 4 minutes caching (staleTime)[cite: 2]
+  // Fetch product data using TanStack Query with initialData from server (15 minutes stale time)
   const { data: product, isLoading: loading } = useQuery<Product | null>({
     queryKey: ["product", productId],
     queryFn: async () => {
-      if (!productId) return null;
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL;
-      const response = await fetch(`${baseUrl}/api/products`, {
-        method: "GET",
-        headers: {
-          "x-app-secret": process.env.NEXT_PUBLIC_APP_SECRET || "",
-        },
-      });
-
-      const result = await response.json();
-      if (result.success && Array.isArray(result.data)) {
-        const found =
-          result.data.find((p: Product) => p.id === productId) ||
-          result.data[0];
-        return found || null;
-      }
-      return null;
+      return initialProduct;
     },
-    enabled: !!productId,
-    staleTime: 1000 * 60 * 4, // Cache data fresh for 4 minutes
+    initialData: initialProduct,
+    staleTime: 1000 * 60 * 15, // 15 minutes (Overriding global 5 minutes)
+    gcTime: 1000 * 60 * 30, // Cache memory retention time (30 minutes)
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
   });
 
   // Automatically initialize variants when product data is loaded
   useEffect(() => {
     if (product && product.variants && product.variants.length > 0) {
       const colors = Array.from(
-        new Set(
-          product.variants.map((v: Variant) => v.color).filter(Boolean),
-        ),
+        new Set(product.variants.map((v: Variant) => v.color).filter(Boolean)),
       );
       const sizes = Array.from(
-        new Set(
-          product.variants.map((v: Variant) => v.size).filter(Boolean),
-        ),
+        new Set(product.variants.map((v: Variant) => v.size).filter(Boolean)),
       );
       if (colors.length > 0) setSelectedColor(colors[0] as string);
       if (sizes.length > 0) setSelectedSize(sizes[0] as string);
@@ -296,7 +287,7 @@ export default function ProductClient() {
     }
   };
 
-  // Custom 3x3 grid dots loader centered exactly like loading.tsx
+  // Loading state view
   if (loading) {
     const delays = [0, 0.2, 0.4, 0.2, 0.4, 0.6, 0.4, 0.6, 0.8];
     return (
@@ -400,7 +391,7 @@ export default function ProductClient() {
         </span>
       </nav>
 
-      {/* React Hook Form handleSubmit */}
+      {/* Main Order Form */}
       <form onSubmit={handleSubmit(onSubmit)}>
         <div className="grid gap-6 sm:gap-8 lg:grid-cols-2 lg:gap-12 items-start">
           {/* Image Gallery Section */}
@@ -430,7 +421,7 @@ export default function ProductClient() {
               </div>
             )}
 
-            {/* Main Display Image */}
+            {/* Main Display Image with Zoom Effect */}
             <div
               className="relative w-full aspect-square sm:aspect-4/5 max-h-112.5 sm:max-h-125 flex items-center justify-center overflow-hidden rounded-2xl border bg-card/50 shadow-sm cursor-zoom-in"
               onMouseEnter={() => setIsZoomed(true)}
@@ -988,27 +979,27 @@ export default function ProductClient() {
             <div className="mt-4 sm:mt-6 rounded-2xl border bg-card p-4 sm:p-6 md:p-8 text-xs sm:text-sm md:text-base leading-relaxed text-foreground whitespace-pre-line prose dark:prose-invert">
               <div
                 className="
-  prose 
-  dark:prose-invert 
-  max-w-none 
-  text-foreground 
-  
-  /* Headings color fix */
-  [&_h1]:text-foreground [&_h2]:text-foreground [&_h3]:text-foreground 
-  
-  /* Bold text color fix */
-  [&_strong]:text-foreground 
-  
-  /* Links primary color fix */
-  [&_a]:text-primary 
-  
-  /* Spacing overrides */
-  [&_p]:my-1.5 
-  [&_ul]:my-1.5 
-  [&_li]:my-0.5 
-  [&_h1]:mb-3 [&_h1]:mt-4 
-  [&_h3]:mb-1.5 [&_h3]:mt-3
-"
+                  prose 
+                  dark:prose-invert 
+                  max-w-none 
+                  text-foreground 
+                  
+                  /* Headings color fix */
+                  [&_h1]:text-foreground [&_h2]:text-foreground [&_h3]:text-foreground 
+                  
+                  /* Bold text color fix */
+                  [&_strong]:text-foreground 
+                  
+                  /* Links primary color fix */
+                  [&_a]:text-primary 
+                  
+                  /* Spacing overrides */
+                  [&_p]:my-1.5 
+                  [&_ul]:my-1.5 
+                  [&_li]:my-0.5 
+                  [&_h1]:mb-3 [&_h1]:mt-4 
+                  [&_h3]:mb-1.5 [&_h3]:mt-3
+                "
               >
                 <ReactMarkdown remarkPlugins={[remarkGfm]}>
                   {product.description}
