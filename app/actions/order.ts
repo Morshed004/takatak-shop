@@ -5,7 +5,15 @@ import { revalidatePath } from "next/cache";
 
 type OrderStatus = "PENDING" | "PROCESSING" | "SHIPPED" | "DELIVERED" | "CANCELLED";
 
-// Function to send SMS using SMS Gateway (using passed session values)
+// List of cancellation reasons where refund is not applicable
+const NON_REFUNDABLE_REASONS = [
+  "Fake Payment Details",
+  "Payment Not Received",
+  "Suspected Fraud",
+  "Policy Violation",
+];
+
+// Function to send SMS using SMS Gateway
 async function sendSmsToCustomer(
   phone: string, 
   message: string, 
@@ -18,7 +26,7 @@ async function sendSmsToCustomer(
       return { success: false, message: "Gateway credentials missing." };
     }
 
-    // Ensure correct phone number format (+880) for Bangladeshi numbers
+    // Format phone number to international standard for Bangladesh (+880)
     let formattedPhone = phone.trim();
     if (formattedPhone.startsWith("0")) {
       formattedPhone = `+88${formattedPhone}`;
@@ -33,8 +41,8 @@ async function sendSmsToCustomer(
         "Authorization": `Bearer ${gatewayKey}`,
       },
       body: JSON.stringify({
-        number: formattedPhone, // SMS expects 'number'
-        text: message,          // SMS expects 'text'
+        number: formattedPhone, // API parameter for phone number
+        text: message,          // API parameter for message body
       }),
     });
 
@@ -46,7 +54,7 @@ async function sendSmsToCustomer(
   }
 }
 
-// Update order status server action accepting session gateway credentials
+// Server action to update order status and trigger notification
 export async function updateOrderStatus(
   orderId: string,
   status: OrderStatus,
@@ -55,7 +63,7 @@ export async function updateOrderStatus(
   gatewayKey?: string
 ) {
   try {
-    // 1. Fetch order and customer phone number from the database
+    // 1. Fetch order details from database
     const order = await prisma.order.findUnique({
       where: { id: orderId },
       select: { phone: true, orderNumber: true, id: true },
@@ -65,34 +73,42 @@ export async function updateOrderStatus(
       return { success: false, message: "Order not found." };
     }
 
-    // 2. Update order status in the database
+    // 2. Update status and cancellation reason in database
     await prisma.order.update({
       where: { id: orderId },
       data: {
         status,
-        // Save cancel reason if status is CANCELLED
         ...(status === "CANCELLED" && cancelReason ? { cancelReason } : {}),
       },
     });
 
-    // 3. Generate message with 'Takatak Shop' branding (within 130 characters limit)
+    // 3. Construct SMS message content
     const orderRef = order.orderNumber || order.id.slice(-6);
     let smsMessage = "";
 
     if (status === "CANCELLED") {
-      // Include cancellation reason and delivery fee refund assurance
       const reasonText = cancelReason ? ` Reason: ${cancelReason}.` : "";
-      smsMessage = `Takatak Shop: Order #${orderRef} cancelled.${reasonText} Your delivery fee refund will be sent very soon.`;
+      
+      // Check if cancellation reason excludes refund eligibility
+      const isNonRefundable = cancelReason && NON_REFUNDABLE_REASONS.includes(cancelReason);
+
+      if (isNonRefundable) {
+        // Standard cancellation message without refund assurance
+        smsMessage = `Takatak Shop: Order #${orderRef} has been cancelled.${reasonText}`;
+      } else {
+        // Message with refund assurance for eligible reasons
+        smsMessage = `Takatak Shop: Order #${orderRef} cancelled.${reasonText} Your refund will be sent very soon.`;
+      }
     } else {
       smsMessage = `Takatak Shop: Order #${orderRef} status is now ${status}. Thank you for shopping with us! Stay connected.`;
     }
 
-    // 4. Send SMS to the customer's phone number via SMS Gateway using session credentials
+    // 4. Send SMS if phone number and credentials are valid
     if (order.phone && gatewayUrl && gatewayKey) {
       await sendSmsToCustomer(order.phone, smsMessage, gatewayUrl, gatewayKey);
     }
 
-    // Revalidate order detail page path
+    // Revalidate paths to update UI
     revalidatePath(`/admin/dashboard/orders/${orderId}`);
     revalidatePath("/admin/dashboard/orders");
 

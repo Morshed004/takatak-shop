@@ -31,7 +31,6 @@ interface Props {
 // Predefined list of cancellation reasons
 const CANCELLATION_REASONS = [
   "Out of Stock",
-  "Payment Failed",
   "Fake Payment Details",
   "Payment Not Received",
   "Suspected Fraud",
