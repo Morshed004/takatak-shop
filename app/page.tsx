@@ -51,10 +51,10 @@ const taka = (n?: number | null) => {
   return `৳${n.toLocaleString("bn-BD")}`;
 };
 
-// Force dynamic rendering on every request so products shuffle on every reload
-export const dynamic = "force-dynamic";
+// Revalidate page every 10 minutes (600 seconds) to cache data and reduce DB hits
+export const revalidate = 900;
 
-// Fetch products from database and shuffle them randomly on every request
+// Fetch products from database and shuffle them on each cache revalidation (every 10 min)
 async function getProducts(): Promise<Product[]> {
   try {
     const products = await prisma.product.findMany({
@@ -63,7 +63,7 @@ async function getProducts(): Promise<Product[]> {
       },
     });
 
-    // Shuffle products array randomly on each reload using Math.random()
+    // Randomly shuffle products every time the cache updates (every 10 minutes)
     const shuffledProducts = products.sort(() => Math.random() - 0.5);
 
     return shuffledProducts;
@@ -87,7 +87,7 @@ export default async function HomePage() {
       <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3.5">
           <Link href="/" className="flex items-center gap-3 group">
-            {/* লোগো ইমেজ */}
+            {/* Logo Image */}
             <div className="relative w-9 h-9 overflow-hidden rounded-xl shadow-sm transition-transform group-hover:scale-105">
               <Image
                 src="/logo.png"
@@ -97,7 +97,7 @@ export default async function HomePage() {
                 className="object-cover"
               />
             </div>
-            {/* টেক্সট */}
+            {/* Text */}
             <span className="text-2xl font-black tracking-tight">
               Takatak<span className="text-primary">.</span>
             </span>
@@ -193,7 +193,7 @@ export default async function HomePage() {
         <div className="mx-auto grid max-w-7xl gap-8 px-4 py-12 sm:grid-cols-2 md:grid-cols-3">
           <div className="space-y-4">
             <Link href="/" className="flex items-center gap-3 group">
-              {/* লোগো ইমেজ */}
+              {/* Logo Image */}
               <div className="relative w-9 h-9 overflow-hidden rounded-xl shadow-sm transition-transform group-hover:scale-105">
                 <Image
                   src="/logo.png"
@@ -203,7 +203,7 @@ export default async function HomePage() {
                   className="object-cover"
                 />
               </div>
-              {/* টেক্সট */}
+              {/* Text */}
               <span className="text-2xl font-black tracking-tight">
                 Takatak<span className="text-primary">.</span>
               </span>
