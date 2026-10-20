@@ -6,6 +6,7 @@ import { Banknote, Eye, RotateCcw, ShieldCheck, Truck } from "lucide-react";
 import Link from "next/link";
 import HeroCarousel from "@/components/HeroCarousel";
 import Image from "next/image";
+import { FaFacebook } from "react-icons/fa";
 
 interface ProductImage {
   id: string;
@@ -90,8 +91,9 @@ export default async function HomePage() {
             <div className="relative w-9 h-9 overflow-hidden rounded-xl shadow-sm transition-transform group-hover:scale-105">
               <Image
                 src="/logo.png"
-                alt="Takatak Logo"
                 fill
+                sizes="36"
+                alt="Takatak Logo"
                 className="object-cover"
               />
             </div>
@@ -191,20 +193,21 @@ export default async function HomePage() {
         <div className="mx-auto grid max-w-7xl gap-8 px-4 py-12 sm:grid-cols-2 md:grid-cols-3">
           <div className="space-y-4">
             <Link href="/" className="flex items-center gap-3 group">
-            {/* লোগো ইমেজ */}
-            <div className="relative w-9 h-9 overflow-hidden rounded-xl shadow-sm transition-transform group-hover:scale-105">
-              <Image
-                src="/logo.png"
-                alt="Takatak Logo"
-                fill
-                className="object-cover"
-              />
-            </div>
-            {/* টেক্সট */}
-            <span className="text-2xl font-black tracking-tight">
-              Takatak<span className="text-primary">.</span>
-            </span>
-          </Link>
+              {/* লোগো ইমেজ */}
+              <div className="relative w-9 h-9 overflow-hidden rounded-xl shadow-sm transition-transform group-hover:scale-105">
+                <Image
+                  src="/logo.png"
+                  fill
+                  sizes="36"
+                  alt="Takatak Logo"
+                  className="object-cover"
+                />
+              </div>
+              {/* টেক্সট */}
+              <span className="text-2xl font-black tracking-tight">
+                Takatak<span className="text-primary">.</span>
+              </span>
+            </Link>
             <p className="text-sm text-muted-foreground leading-relaxed">
               আমরা আপনাকে দিচ্ছি সর্বোচ্চ কোয়ালিটি ও সঠিক মূল্যের নিশ্চয়তা।
             </p>
@@ -225,6 +228,14 @@ export default async function HomePage() {
             <h5 className="font-bold mb-4 text-sm">যোগাযোগ</h5>
             <p className="text-sm text-muted-foreground">
               ইমেইল: support@takatak.shop <br />
+              <a
+                href="https://www.facebook.com/profile.php?id=61595063524452"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:underline text-[#1877F2]"
+              >
+                <FaFacebook size={30} />
+              </a>
             </p>
           </div>
         </div>

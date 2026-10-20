@@ -70,9 +70,15 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" suppressHydrationWarning={true} className={cn("h-full", "antialiased", "font-sans")}>
-      <body className={font.className}>{children}</body>
-      <Toaster position="top-center"/>
+    <html
+      lang="en"
+      suppressHydrationWarning={true}
+      className={cn("h-full", "antialiased", "font-sans")}
+    >
+      <body className={font.className}>
+        {children}
+        <Toaster position="top-center" />
+      </body>
     </html>
   );
 }

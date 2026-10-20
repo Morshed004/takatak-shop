@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth"; // Better-auth configuration path
 import { AdminHeader } from "@/components/admin/admin-header"; // AdminHeader Component Path
+import { GatewayProvider } from "@/context/GatewayContext";
 
 export const metadata: Metadata = {
   title: {
@@ -27,9 +28,11 @@ export default async function AdminLayout({
     redirect("/admin/login");
   }
   return (
-    <div className="relative flex min-h-screen flex-col bg-background antialiased">
-      <AdminHeader />
-      <div className="flex-1">{children}</div>
-    </div>
+    <GatewayProvider>
+      <div className="relative flex min-h-screen flex-col bg-background antialiased">
+        <AdminHeader />
+        <div className="flex-1">{children}</div>
+      </div>
+    </GatewayProvider>
   );
 }
