@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useQuery } from "@tanstack/react-query"; // Import TanStack Query[cite: 2]
 import {
   ArrowRight,
   Banknote,
@@ -101,9 +102,6 @@ export default function ProductClient() {
   const params = useParams();
   const productId = params?.id as string;
 
-  const [product, setProduct] = useState<Product | null>(null);
-  const [loading, setLoading] = useState(true);
-
   const [activeImg, setActiveImg] = useState(0);
   const [qty, setQty] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -146,51 +144,49 @@ export default function ProductClient() {
   const selectedZila = watch("selectedZila");
   const paymentMethod = watch("paymentMethod");
 
-  useEffect(() => {
-    async function fetchProduct() {
-      if (!productId) return;
-      try {
-        const baseUrl =
-          process.env.NEXT_PUBLIC_API_URL;
-        const response = await fetch(`${baseUrl}/api/products`, {
-          method: "GET",
-          headers: {
-            "x-app-secret": process.env.NEXT_PUBLIC_APP_SECRET || "",
-          },
-          next: { revalidate: 300 },
-        });
+  // Fetch product data using TanStack Query with 4 minutes caching (staleTime)[cite: 2]
+  const { data: product, isLoading: loading } = useQuery<Product | null>({
+    queryKey: ["product", productId],
+    queryFn: async () => {
+      if (!productId) return null;
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+      const response = await fetch(`${baseUrl}/api/products`, {
+        method: "GET",
+        headers: {
+          "x-app-secret": process.env.NEXT_PUBLIC_APP_SECRET || "",
+        },
+      });
 
-        const result = await response.json();
-        if (result.success && Array.isArray(result.data)) {
-          const found =
-            result.data.find((p: Product) => p.id === productId) ||
-            result.data[0];
-          setProduct(found || null);
-
-          if (found && found.variants && found.variants.length > 0) {
-            const colors = Array.from(
-              new Set(
-                found.variants.map((v: Variant) => v.color).filter(Boolean),
-              ),
-            );
-            const sizes = Array.from(
-              new Set(
-                found.variants.map((v: Variant) => v.size).filter(Boolean),
-              ),
-            );
-            if (colors.length > 0) setSelectedColor(colors[0] as string);
-            if (sizes.length > 0) setSelectedSize(sizes[0] as string);
-          }
-        }
-      } catch (error) {
-        toast.error("Error fetching product");
-      } finally {
-        setLoading(false);
+      const result = await response.json();
+      if (result.success && Array.isArray(result.data)) {
+        const found =
+          result.data.find((p: Product) => p.id === productId) ||
+          result.data[0];
+        return found || null;
       }
-    }
+      return null;
+    },
+    enabled: !!productId,
+    staleTime: 1000 * 60 * 4, // Cache data fresh for 4 minutes
+  });
 
-    fetchProduct();
-  }, [productId]);
+  // Automatically initialize variants when product data is loaded
+  useEffect(() => {
+    if (product && product.variants && product.variants.length > 0) {
+      const colors = Array.from(
+        new Set(
+          product.variants.map((v: Variant) => v.color).filter(Boolean),
+        ),
+      );
+      const sizes = Array.from(
+        new Set(
+          product.variants.map((v: Variant) => v.size).filter(Boolean),
+        ),
+      );
+      if (colors.length > 0) setSelectedColor(colors[0] as string);
+      if (sizes.length > 0) setSelectedSize(sizes[0] as string);
+    }
+  }, [product]);
 
   const availableColors = useMemo(() => {
     if (!product?.variants) return [];
@@ -237,7 +233,6 @@ export default function ProductClient() {
 
   // Form Submit Handler
   const onSubmit = async (data: OrderFormValues) => {
-    // Variant checks
     if (availableColors.length > 0 && !selectedColor) {
       toast.warning("Please select a product color");
       return;
@@ -266,7 +261,7 @@ export default function ProductClient() {
         fullAddress: data.fullAddress,
         customerNote: data.customerNote,
         shippingCost: shipping,
-        paymentMethod: data.paymentMethod.toUpperCase(), // BKASH, NAGAD, ROCKET
+        paymentMethod: data.paymentMethod.toUpperCase(),
         senderNumber: data.senderNumber,
         trxId: data.trxId,
         totalAmount: (product?.price || 0) * qty + shipping,
@@ -287,14 +282,13 @@ export default function ProductClient() {
         throw new Error(result.message || "Failed to place order.");
       }
 
-      // Success: Save order details, show success screen & reset form
       setSuccessOrderInfo({
         orderNumber: result.data.orderNumber,
         total: (product?.price || 0) * qty + shipping,
       });
       setIsSuccess(true);
-      reset(); // Reset form fields
-      setQty(1); // Reset quantity
+      reset();
+      setQty(1);
     } catch (error: any) {
       toast.error(error.message || "Something went wrong!");
     } finally {
@@ -302,10 +296,23 @@ export default function ProductClient() {
     }
   };
 
+  // Custom 3x3 grid dots loader centered exactly like loading.tsx
   if (loading) {
+    const delays = [0, 0.2, 0.4, 0.2, 0.4, 0.6, 0.4, 0.6, 0.8];
     return (
-      <div className="flex min-h-[60vh] items-center justify-center text-muted-foreground">
-        <p>Loading...</p>
+      <div className="flex min-h-screen w-full items-center justify-center bg-background">
+        <div className="grid grid-cols-3 gap-2.5 p-4">
+          {delays.map((delay, index) => (
+            <span
+              key={index}
+              className="h-3.5 w-3.5 rounded-full bg-primary animate-pulse"
+              style={{
+                animationDelay: `${delay}s`,
+                animationDuration: "1.2s",
+              }}
+            />
+          ))}
+        </div>
       </div>
     );
   }
@@ -986,16 +993,16 @@ export default function ProductClient() {
   max-w-none 
   text-foreground 
   
-  /* Headings-এর জন্য Shadcn Foreground কালার */
+  /* Headings color fix */
   [&_h1]:text-foreground [&_h2]:text-foreground [&_h3]:text-foreground 
   
-  /* Strong / Bold Text-এর জন্য Shadcn Primary বা Foreground কালার */
+  /* Bold text color fix */
   [&_strong]:text-foreground 
   
-  /* Links-এর জন্য Shadcn Primary কালার */
+  /* Links primary color fix */
   [&_a]:text-primary 
   
-  /* Spacing কমানোর জন্য CSS Overrides */
+  /* Spacing overrides */
   [&_p]:my-1.5 
   [&_ul]:my-1.5 
   [&_li]:my-0.5 

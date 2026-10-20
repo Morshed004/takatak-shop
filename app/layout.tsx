@@ -3,6 +3,7 @@ import "./globals.css";
 import { cn } from "@/lib/utils";
 import { Noto_Sans_Bengali } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
+import { QueryProvider } from "@/components/providers/query-provider";
 
 const font = Noto_Sans_Bengali({
   subsets: ["bengali", "latin"],
@@ -76,7 +77,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={cn("h-full", "antialiased", "font-sans")}
     >
       <body className={font.className}>
-        {children}
+        <QueryProvider>{children}</QueryProvider>
         <Toaster position="top-center" />
       </body>
     </html>
