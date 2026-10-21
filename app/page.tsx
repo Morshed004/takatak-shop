@@ -2,11 +2,20 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { prisma } from "@/lib/prisma"; // Direct Prisma import
-import { Banknote, Eye, RotateCcw, ShieldCheck, Truck } from "lucide-react";
+import {
+  Banknote,
+  Eye,
+  RotateCcw,
+  ShieldCheck,
+  Truck,
+  ChevronLeft,
+  ChevronRight as ChevronRightIcon,
+} from "lucide-react";
 import Link from "next/link";
 import HeroCarousel from "@/components/HeroCarousel";
 import Image from "next/image";
 import { FaFacebook } from "react-icons/fa";
+import { Suspense } from "react";
 
 interface ProductImage {
   id: string;
@@ -20,6 +29,12 @@ interface Product {
   price: number;
   images: ProductImage[];
 }
+
+interface PageProps {
+  searchParams: Promise<{ page?: string }>;
+}
+
+const ITEMS_PER_PAGE = 16;
 
 const perks = [
   {
@@ -51,29 +66,52 @@ const taka = (n?: number | null) => {
   return `৳${n.toLocaleString("bn-BD")}`;
 };
 
-// Revalidate page every 10 minutes (600 seconds) to cache data and reduce DB hits
+// Revalidate page every 15 minutes (900 seconds) to cache data and reduce DB hits
 export const revalidate = 900;
 
-// Fetch products from database and shuffle them on each cache revalidation (every 10 min)
-async function getProducts(): Promise<Product[]> {
+// Fetch paginated products from database, shuffle the current 16 items, and serialize them
+async function getProductsData(page: number) {
   try {
-    const products = await prisma.product.findMany({
-      include: {
-        images: true,
-      },
-    });
+    const skip = (page - 1) * ITEMS_PER_PAGE;
 
-    // Randomly shuffle products every time the cache updates (every 10 minutes)
+    // Fetch total product count and paginated products concurrently
+    const [totalProducts, products] = await Promise.all([
+      prisma.product.count(),
+      prisma.product.findMany({
+        skip,
+        take: ITEMS_PER_PAGE,
+        include: {
+          images: true,
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+      }),
+    ]);
+
+    const totalPages = Math.ceil(totalProducts / ITEMS_PER_PAGE);
+
+    // Randomly shuffle the fetched 16 products for the current page
     const shuffledProducts = products.sort(() => Math.random() - 0.5);
 
-    return shuffledProducts;
+    const serializedProducts = shuffledProducts.map((p) => ({
+      ...p,
+      price: Number(p.price),
+    }));
+
+    return {
+      products: serializedProducts,
+      totalPages,
+      currentPage: page,
+    };
   } catch (error) {
-    return [];
+    return { products: [], totalPages: 1, currentPage: page };
   }
 }
 
-export default async function HomePage() {
-  const products = await getProducts();
+export default async function HomePage({ searchParams }: PageProps) {
+  const resolvedParams = await searchParams;
+  const currentPage = Number(resolvedParams?.page) || 1;
   const year = new Date().getFullYear();
 
   return (
@@ -128,7 +166,7 @@ export default async function HomePage() {
           </div>
         </section>
 
-        {/* 5. Product Grid Showcase Section */}
+        {/* 5. Product Grid Showcase Section with Suspense Streaming & Pagination */}
         <section id="products" className="mx-auto max-w-7xl px-4 pb-12">
           <div className="mb-8 flex items-end justify-between">
             <div>
@@ -139,33 +177,25 @@ export default async function HomePage() {
             </div>
           </div>
 
-          {products.length === 0 ? (
-            <div className="rounded-xl border p-12 text-center text-muted-foreground">
-              <p>কোনো প্রোডাক্ট পাওয়া যায়নি!</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4 lg:gap-6">
-              {products.map((p) => (
-                <ProductCard key={p.id} p={p} />
-              ))}
-            </div>
-          )}
+          <Suspense key={currentPage} fallback={<ProductGridSkeleton />}>
+            <ProductSection page={currentPage} />
+          </Suspense>
         </section>
 
         {/* 6. Promotional Banners */}
         <section className="mx-auto max-w-7xl px-4 pb-14">
           <div className="grid gap-6 md:grid-cols-2">
             <div className="rounded-2xl bg-linear-to-r from-slate-900 to-slate-800 p-8 text-white">
-              <h3 className="text-2xl font-bold">বিশেষ ছাড়ের অফার</h3>
+              <h3 className="text-2xl font-bold">আজই আপনার পছন্দ বেছে নিন</h3>
               <p className="mt-2 text-sm text-slate-300">
-                নির্দিষ্ট পণ্যে পাচ্ছেন আকর্ষণীয় মূল্যছাড়।
+                সহজে অর্ডার করুন এবং ঘরে বসেই ডেলিভারি পান।
               </p>
               <a href="#products">
                 <Button
                   variant="secondary"
                   className="mt-6 rounded-full font-semibold"
                 >
-                  বিস্তারিত দেখুন
+                  ব্রাউজ করুন
                 </Button>
               </a>
             </div>
@@ -189,63 +219,183 @@ export default async function HomePage() {
       </main>
 
       {/* 7. Footer Section */}
-      <footer className="bg-card border-t text-card-foreground">
-        <div className="mx-auto grid max-w-7xl gap-8 px-4 py-12 sm:grid-cols-2 md:grid-cols-3">
-          <div className="space-y-4">
+      <footer className="bg-card border-t text-card-foreground pt-16 pb-12">
+        <div className="mx-auto grid max-w-7xl gap-8 px-4 sm:grid-cols-2 md:grid-cols-4">
+          {/* 1. Brand Info Column */}
+          <div className="space-y-4 md:col-span-1">
             <Link href="/" className="flex items-center gap-3 group">
-              {/* Logo Image */}
-              <div className="relative w-9 h-9 overflow-hidden rounded-xl shadow-sm transition-transform group-hover:scale-105">
+              <div className="relative w-10 h-10 overflow-hidden rounded-xl shadow-md transition-transform group-hover:scale-105">
                 <Image
                   src="/logo.png"
                   fill
-                  sizes="36"
+                  sizes="40"
                   alt="Takatak Logo"
                   className="object-cover"
                 />
               </div>
-              {/* Text */}
               <span className="text-2xl font-black tracking-tight">
                 Takatak<span className="text-primary">.</span>
               </span>
             </Link>
             <p className="text-sm text-muted-foreground leading-relaxed">
               আমরা আপনাকে দিচ্ছি সর্বোচ্চ কোয়ালিটি ও সঠিক মূল্যের নিশ্চয়তা।
+              সারাদেশে ক্যাশ অন ডেলিভারি।
             </p>
           </div>
 
+          {/* 2. Quick Links Column */}
           <div>
-            <h5 className="font-bold mb-4 text-sm">গ্রাহক সেবা</h5>
+            <h5 className="font-bold mb-4 text-sm tracking-wider uppercase text-foreground">
+              কুইক লিংকস
+            </h5>
             <ul className="space-y-2.5 text-sm text-muted-foreground">
               <li>
-                <Link href="/return-policy" className="hover:text-primary">
-                  রিটার্ন নীতি
+                <Link href="/" className="hover:text-primary transition-colors">
+                  হোম পেজ
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/#products"
+                  className="hover:text-primary transition-colors"
+                >
+                  সকল প্রোডাক্টস
                 </Link>
               </li>
             </ul>
           </div>
 
+          {/* 3. Customer Care Column */}
           <div>
-            <h5 className="font-bold mb-4 text-sm">যোগাযোগ</h5>
-            <p className="text-sm text-muted-foreground">
-              ইমেইল: support@takatak.shop <br />
+            <h5 className="font-bold mb-4 text-sm tracking-wider uppercase text-foreground">
+              গ্রাহক সেবা
+            </h5>
+            <ul className="space-y-2.5 text-sm text-muted-foreground">
+              <li>
+                <Link
+                  href="/return-policy"
+                  className="hover:text-primary transition-colors"
+                >
+                  রিটার্ন ও রিফান্ড নীতি
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          {/* 4. Contact & Social Column */}
+          <div className="space-y-3">
+            <h5 className="font-bold mb-4 text-sm tracking-wider uppercase text-foreground">
+              যোগাযোগ
+            </h5>
+            <div className="text-sm text-muted-foreground space-y-1.5">
+              <p>
+                ইমেইল:{" "}
+                <span className="text-foreground font-medium">
+                  support@takatak.shop
+                </span>
+              </p>
+            </div>
+            <div className="pt-2">
+              <p className="text-xs text-muted-foreground mb-2">
+                আমাদের সাথে যুক্ত থাকুন:
+              </p>
               <a
                 href="https://www.facebook.com/profile.php?id=61595063524452"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="hover:underline text-[#1877F2]"
+                className="inline-flex items-center justify-center size-10 rounded-xl bg-[#1877F2]/10 text-[#1877F2] hover:bg-[#1877F2] hover:text-white transition-all"
+                aria-label="Facebook Page"
               >
-                <FaFacebook size={30} />
+                <FaFacebook size={20} />
               </a>
-            </p>
+            </div>
           </div>
         </div>
 
-        <Separator />
+        <div className="max-w-7xl mx-auto px-4">
+          <Separator className="my-8" />
+        </div>
 
-        <div className="mx-auto max-w-7xl px-4 py-6 text-center text-xs text-muted-foreground">
+        <div className="mx-auto max-w-7xl px-4 text-center text-xs text-muted-foreground">
           © {year} Takatak.shop। সর্বস্বত্ব সংরক্ষিত।
         </div>
       </footer>
+    </div>
+  );
+}
+
+/* ---------- Separate Dynamic Product Section Component with Pagination ---------- */
+async function ProductSection({ page }: { page: number }) {
+  const { products, totalPages, currentPage } = await getProductsData(page);
+
+  if (products.length === 0) {
+    return (
+      <div className="rounded-xl border p-12 text-center text-muted-foreground">
+        <p>কোনো প্রোডাক্ট পাওয়া যায়নি!</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-8">
+      {/* Product Grid */}
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4 lg:gap-6">
+        {products.map((p) => (
+          <ProductCard key={p.id} p={p} />
+        ))}
+      </div>
+
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-2 pt-6">
+          <Link
+            href={`/?page=${currentPage - 1}`}
+            className={`${currentPage <= 1 ? "pointer-events-none opacity-50" : ""}`}
+          >
+            <Button variant="outline" size="sm" disabled={currentPage <= 1}>
+              <ChevronLeft className="size-4 mr-1" /> Previous
+            </Button>
+          </Link>
+
+          <span className="text-sm font-medium px-4">
+            Page {currentPage} of {totalPages}
+          </span>
+
+          <Link
+            href={`/?page=${currentPage + 1}`}
+            className={`${currentPage >= totalPages ? "pointer-events-none opacity-50" : ""}`}
+          >
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={currentPage >= totalPages}
+            >
+              Next <ChevronRightIcon className="size-4 ml-1" />
+            </Button>
+          </Link>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ---------- Product Grid Skeleton Loader Component (16 items for full page match) ---------- */
+function ProductGridSkeleton() {
+  return (
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4 lg:gap-6">
+      {Array.from({ length: 16 }).map((_, i) => (
+        <div
+          key={i}
+          className="animate-pulse rounded-xl border bg-card p-4 space-y-4"
+        >
+          <div className="aspect-square w-full bg-muted rounded-lg" />
+          <div className="space-y-2">
+            <div className="h-4 bg-muted rounded w-3/4" />
+            <div className="h-4 bg-muted rounded w-1/2" />
+          </div>
+          <div className="h-9 bg-muted rounded-lg w-full" />
+        </div>
+      ))}
     </div>
   );
 }

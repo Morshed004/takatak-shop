@@ -376,20 +376,7 @@ export default function ProductClient({ initialProduct }: ProductClientProps) {
   }
 
   return (
-    <main className="mx-auto max-w-7xl px-3 sm:px-6 pb-32 pt-4 sm:pt-6 lg:pb-16 text-foreground bg-background">
-      {/* Breadcrumb Navigation */}
-      <nav
-        aria-label="breadcrumb"
-        className="mb-4 sm:mb-6 flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-muted-foreground overflow-x-auto whitespace-nowrap pb-1"
-      >
-        <Link href="/" className="transition hover:text-foreground">
-          Home
-        </Link>
-        <ChevronRight className="size-3.5 shrink-0" />
-        <span className="line-clamp-1 font-medium text-foreground">
-          {product.name}
-        </span>
-      </nav>
+    <div>
 
       {/* Main Order Form */}
       <form onSubmit={handleSubmit(onSubmit)}>
@@ -1030,6 +1017,6 @@ export default function ProductClient({ initialProduct }: ProductClientProps) {
           </div>
         </div>
       </form>
-    </main>
+    </div>
   );
 }
