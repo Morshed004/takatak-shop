@@ -4,11 +4,14 @@ import { cn } from "@/lib/utils";
 import { Noto_Sans_Bengali } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { QueryProvider } from "@/components/providers/query-provider";
+import Script from "next/script";
+import FacebookPixel from "@/components/FacebookPixel";
 
 const font = Noto_Sans_Bengali({
   subsets: ["bengali", "latin"],
   weight: ["400", "500", "600", "700"],
 });
+
 export const metadata: Metadata = {
   title: {
     default: "Takatak - Modern E-Commerce Platform",
@@ -28,7 +31,7 @@ export const metadata: Metadata = {
   authors: [{ name: "Takatak Team" }],
   creator: "Takatak",
   publisher: "Takatak",
-  metadataBase: new URL("https://takatak.shop"), // Apnar exact domain ekhane diben
+  metadataBase: new URL("https://takatak.shop"),
   alternates: {
     canonical: "/",
   },
@@ -40,7 +43,7 @@ export const metadata: Metadata = {
     siteName: "Takatak",
     images: [
       {
-        url: "/og-image.webp", // public/og-image.webp folder e rakhte hobe
+        url: "/og-image.webp",
         width: 1200,
         height: 630,
         alt: "Takatak E-Commerce Banner",
@@ -69,7 +72,7 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html
       lang="en"
@@ -79,6 +82,35 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className={font.className}>
         <QueryProvider>{children}</QueryProvider>
         <Toaster position="top-center" />
+        <FacebookPixel />
+
+        {/* Facebook Pixel Script */}
+        <Script
+          id="fb-pixel"
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `
+              !function(f,b,e,v,n,t,s)
+              {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+              n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+              if(!n._s)n._s=!0;n.queue=[];t=b.createElement(e);t.async=!0;
+              t.src=v;s=b.getElementsByTagName(e)[0];
+              s.parentNode.insertBefore(t,s)}(window, document,'script',
+              'https://connect.facebook.net/en_US/fbevents.js');
+              fbq('init', '2951254778543440');
+              fbq('track', 'PageView');
+            `,
+          }}
+        />
+        <noscript>
+          <img
+            height="1"
+            width="1"
+            style={{ display: "none" }}
+            src="https://www.facebook.com/tr?id=2951254778543440&ev=PageView&noscript=1"
+            alt=""
+          />
+        </noscript>
       </body>
     </html>
   );
