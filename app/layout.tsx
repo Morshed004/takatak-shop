@@ -79,6 +79,21 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       suppressHydrationWarning={true}
       className={cn("h-full", "antialiased", "font-sans")}
     >
+      <head>
+        {/* Google Analytics (gtag.js) */}
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-WHBXEN8K58"
+          strategy="afterInteractive"
+        />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-WHBXEN8K58');
+          `}
+        </Script>
+      </head>
       <body className={font.className}>
         <QueryProvider>{children}</QueryProvider>
         <Toaster position="top-center" />
