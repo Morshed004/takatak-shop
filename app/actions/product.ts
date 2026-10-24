@@ -34,7 +34,92 @@ async function uploadToCloudinary(file: File): Promise<{ url: string; publicId: 
   });
 }
 
-// Update Product Server Action
+// ==========================================
+// CREATE PRODUCT SERVER ACTION
+// ==========================================
+export async function createProduct(formData: FormData) {
+  try {
+    const title = formData.get("title") as string;
+    const description = formData.get("description") as string;
+    const price = Number(formData.get("price"));
+    const colorsStr = formData.get("colors") as string;
+    const sizesStr = formData.get("sizes") as string;
+
+    const files = formData.getAll("images") as File[];
+
+    if (!title || !price) {
+      return { success: false, message: "Title and Price are required fields." };
+    }
+
+    // 1. Upload product images to Cloudinary
+    const uploadedImages = [];
+    for (const file of files) {
+      if (file && file.size > 0) {
+        const uploaded = await uploadToCloudinary(file);
+        uploadedImages.push({
+          url: uploaded.url,
+          publicId: uploaded.publicId,
+        });
+      }
+    }
+
+    // 2. Parse variant colors and sizes
+    const colors = colorsStr ? colorsStr.split(",").map((c) => c.trim()).filter(Boolean) : [];
+    const sizes = sizesStr ? sizesStr.split(",").map((s) => s.trim()).filter(Boolean) : [];
+
+    const variantData = [];
+    if (colors.length > 0 && sizes.length > 0) {
+      for (const color of colors) {
+        for (const size of sizes) {
+          variantData.push({ color, size });
+        }
+      }
+    } else if (colors.length > 0) {
+      for (const color of colors) {
+        variantData.push({ color });
+      }
+    } else if (sizes.length > 0) {
+      for (const size of sizes) {
+        variantData.push({ size });
+      }
+    }
+
+    // 3. Create product in Database along with images and variants
+    const newProduct = await prisma.product.create({
+      data: {
+        name: title,
+        description,
+        price,
+        images: {
+          create: uploadedImages,
+        },
+        ...(variantData.length > 0 && {
+          variants: {
+            create: variantData,
+          },
+        }),
+      },
+    });
+
+    revalidatePath("/admin/dashboard/products");
+
+    return {
+      success: true,
+      message: "Product created successfully!",
+      product: newProduct,
+    };
+  } catch (error: any) {
+    console.error("Error creating product:", error);
+    return {
+      success: false,
+      message: error.message || "An error occurred while creating the product.",
+    };
+  }
+}
+
+// ==========================================
+// UPDATE PRODUCT SERVER ACTION
+// ==========================================
 export async function updateProduct(formData: FormData) {
   try {
     const productId = formData.get("id") as string;
@@ -138,7 +223,9 @@ export async function updateProduct(formData: FormData) {
   }
 }
 
-// Delete Product Server Action (Cleans up all images from Cloudinary and DB)
+// ==========================================
+// DELETE PRODUCT SERVER ACTION
+// ==========================================
 export async function deleteProduct(productId: string) {
   try {
     // Fetch all images linked to this product
