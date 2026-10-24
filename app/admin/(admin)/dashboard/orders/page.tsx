@@ -19,25 +19,40 @@ import {
 import { ShoppingBag, Eye, MapPin, Phone, User, FileText } from "lucide-react";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-
+import { redis } from "@/lib/redis"; // Import Redis client
 
 export const metadata = {
   title: "Orders",
 };
 
-// Real database theke orders fetch korar function
+// Fetch orders using Redis cache with fallback to database
 async function getOrders() {
+  const cacheKey = "cached_orders";
   try {
+    // 1. Try to fetch orders from Redis cache first
+    const cachedOrders: any = await redis.get(cacheKey);
+    if (cachedOrders && Array.isArray(cachedOrders)) {
+      return cachedOrders;
+    }
+
+    // 2. Fetch from Database if cache is empty
     const orders = await prisma.order.findMany({
       orderBy: {
         createdAt: "desc",
       },
       include: {
-        items: true, // Jodi order items laghe
+        items: true,
       },
     });
+
+    // 3. Save fetched orders to Redis cache
+    if (orders && orders.length > 0) {
+      await redis.set(cacheKey, orders);
+    }
+
     return orders;
   } catch (error) {
+    console.error("Error fetching orders from Redis/DB:", error);
     return [];
   }
 }
@@ -114,7 +129,7 @@ export default async function OrdersPage() {
                 </TableHeader>
 
                 <TableBody>
-                  {orders.map((order) => {
+                  {orders.map((order: any) => {
                     const formattedDate = new Date(order.createdAt).toLocaleDateString("en-GB", {
                       day: "2-digit",
                       month: "short",
@@ -189,7 +204,7 @@ export default async function OrdersPage() {
 
             {/* MOBILE & TABLET VIEW: Card List */}
             <div className="divide-y lg:hidden">
-              {orders.map((order) => {
+              {orders.map((order: any) => {
                 const formattedDate = new Date(order.createdAt).toLocaleDateString("en-GB", {
                   day: "2-digit",
                   month: "short",

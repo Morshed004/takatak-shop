@@ -102,8 +102,9 @@ export async function createProduct(formData: FormData) {
       },
     });
 
-    // 4. Invalidate Redis product cache
+    // 4. Invalidate Redis product caches (Both old and new listing keys)
     await redis.del("cached_products");
+    await redis.del("cached_products_v2");
 
     revalidatePath("/admin/dashboard/products");
 
@@ -217,8 +218,10 @@ export async function updateProduct(formData: FormData) {
       });
     }
 
-    // 5. Invalidate Redis product cache
+    // 5. Invalidate Redis product caches (Listings + Specific Product Cache)
     await redis.del("cached_products");
+    await redis.del("cached_products_v2");
+    await redis.del(`product_${productId}`);
 
     // Revalidate product listing cache
     revalidatePath("/admin/dashboard/products");
@@ -252,8 +255,10 @@ export async function deleteProduct(productId: string) {
       where: { id: productId },
     });
 
-    // Invalidate Redis product cache
+    // Invalidate Redis product caches (Listings + Specific Product Cache)
     await redis.del("cached_products");
+    await redis.del("cached_products_v2");
+    await redis.del(`product_${productId}`);
 
     revalidatePath("/admin/dashboard/products");
 

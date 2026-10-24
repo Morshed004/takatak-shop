@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { redis } from "@/lib/redis";
 import { ProductUpdateForm } from "@/components/product-update-form";
 
 type Props = {
@@ -8,15 +9,27 @@ type Props = {
 
 export default async function EditProductPage({ params }: Props) {
   const { id } = await params;
+  const cacheKey = `product_${id}`;
 
-  const product = await prisma.product.findUnique({
-    where: { id },
-    include: {
-      images: true,
-      variants: true,
-    },
-  });
+  // 1. Try to fetch product from Redis cache first
+  let product: any = await redis.get(cacheKey);
 
+  // 2. If not found in Redis, fetch from Database and store in Redis
+  if (!product) {
+    product = await prisma.product.findUnique({
+      where: { id },
+      include: {
+        images: true,
+        variants: true,
+      },
+    });
+
+    if (product) {
+      await redis.set(cacheKey, product);
+    }
+  }
+
+  // If product doesn't exist, trigger 404
   if (!product) {
     notFound();
   }

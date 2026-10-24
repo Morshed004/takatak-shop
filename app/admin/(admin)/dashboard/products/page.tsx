@@ -1,5 +1,4 @@
 import { formatPrice } from "@/lib/formatPrice";
-import { prisma } from "@/lib/prisma";
 import {
   ImageIcon,
   Package,
@@ -36,23 +35,40 @@ interface PageProps {
   searchParams: Promise<{ page?: string; search?: string }>;
 }
 
+// Function to fetch products from the internal API route using APP_SECRET header
+async function fetchProductsFromApi() {
+  try {
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    const appSecret = process.env.APP_SECRET || "";
+
+    const response = await fetch(`${baseUrl}/api/products`, {
+      headers: {
+        "x-app-secret": appSecret,
+      },
+      cache: "no-store", // Always fetch fresh state or rely on Redis cache inside the API
+    });
+
+    const result = await response.json();
+
+    if (result.success && Array.isArray(result.data)) {
+      return result.data;
+    }
+    return [];
+  } catch (error) {
+    console.error("Failed to fetch products from API:", error);
+    return [];
+  }
+}
+
 export default async function ProductsPage({ searchParams }: PageProps) {
   const resolvedParams = await searchParams;
   const searchQuery = resolvedParams?.search?.toLowerCase() || "";
 
-  // Fetch products from database
-  const allProducts = await prisma.product.findMany({
-    include: {
-      images: true,
-      variants: true,
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
-  });
+  // Fetch products from API route (which uses Redis cache)
+  const allProducts = await fetchProductsFromApi();
 
   // Filter products based on search query
-  const filteredProducts = allProducts.filter((product) =>
+  const filteredProducts = allProducts.filter((product: any) =>
     product.name.toLowerCase().includes(searchQuery)
   );
 
@@ -119,15 +135,15 @@ export default async function ProductsPage({ searchParams }: PageProps) {
                 </TableHeader>
 
                 <TableBody>
-                  {products.map((product) => {
+                  {products.map((product: any) => {
                     const firstImage = product.images?.[0]?.url;
 
                     // Extract unique colors & sizes
                     const colors = Array.from(
-                      new Set(product.variants?.map((v) => v.color).filter(Boolean))
+                      new Set(product.variants?.map((v: any) => v.color).filter(Boolean))
                     );
                     const sizes = Array.from(
-                      new Set(product.variants?.map((v) => v.size).filter(Boolean))
+                      new Set(product.variants?.map((v: any) => v.size).filter(Boolean))
                     );
 
                     return (
@@ -226,14 +242,14 @@ export default async function ProductsPage({ searchParams }: PageProps) {
 
             {/* MOBILE VIEW */}
             <div className="divide-y md:hidden">
-              {products.map((product) => {
+              {products.map((product: any) => {
                 const firstImage = product.images?.[0]?.url;
 
                 const colors = Array.from(
-                  new Set(product.variants?.map((v) => v.color).filter(Boolean))
+                  new Set(product.variants?.map((v: any) => v.color).filter(Boolean))
                 );
                 const sizes = Array.from(
-                  new Set(product.variants?.map((v) => v.size).filter(Boolean))
+                  new Set(product.variants?.map((v: any) => v.size).filter(Boolean))
                 );
 
                 return (

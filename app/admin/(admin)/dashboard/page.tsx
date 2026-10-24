@@ -11,12 +11,13 @@ import {
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { prisma } from "@/lib/prisma";
+import { redis } from "@/lib/redis"; // Import Redis client
 
 export const metadata = {
   title: "Dashboard | Takatak",
 };
 
-// Force dynamic rendering to fetch real-time database statistics on every load
+// Force dynamic rendering to handle server-side cache/data fetching cleanly
 export const dynamic = "force-dynamic";
 
 // Helper function to format currency in Bangladeshi Taka
@@ -27,10 +28,18 @@ const taka = (n?: number | null) => {
   return `৳${n.toLocaleString("bn-BD")}`;
 };
 
-// Function to fetch all dashboard metrics and lists from database
+// Function to fetch all dashboard metrics and lists using Redis cache with DB fallback
 async function getDashboardData() {
+  const cacheKey = "admin_dashboard_stats";
+
   try {
-    // 1. Get total revenue (sum of all orders totalAmount)
+    // 1. Try to fetch from Redis cache first
+    const cachedData: any = await redis.get(cacheKey);
+    if (cachedData) {
+      return cachedData;
+    }
+
+    // 2. Get total revenue (sum of all orders totalAmount)
     const totalRevenueAgg = await prisma.order.aggregate({
       _sum: {
         totalAmount: true,
@@ -38,10 +47,10 @@ async function getDashboardData() {
     });
     const totalRevenue = totalRevenueAgg._sum.totalAmount || 0;
 
-    // 2. Get total orders count
+    // 3. Get total orders count
     const totalOrders = await prisma.order.count();
 
-    // 3. Get today's start and end date to calculate today's sales and orders
+    // 4. Get today's start and end date to calculate today's sales and orders
     const startOfDay = new Date();
     startOfDay.setHours(0, 0, 0, 0);
 
@@ -66,7 +75,7 @@ async function getDashboardData() {
     const todaysRevenue = todayOrdersAgg._sum.totalAmount || 0;
     const todaysOrderCount = todayOrdersAgg._count.id || 0;
 
-    // 4. Get Pending Orders List (Latest 5 pending orders)
+    // 5. Get Pending Orders List (Latest 5 pending orders)
     const pendingOrders = await prisma.order.findMany({
       where: {
         status: "PENDING",
@@ -84,7 +93,7 @@ async function getDashboardData() {
       },
     });
 
-    // 5. Get Most Sold Products based on OrderItem quantities
+    // 6. Get Most Sold Products based on OrderItem quantities
     const orderItems = await prisma.orderItem.groupBy({
       by: ["productId"],
       _sum: {
@@ -122,7 +131,7 @@ async function getDashboardData() {
       })
       .filter((p) => p.id !== undefined);
 
-    return {
+    const dashboardData = {
       totalRevenue,
       totalOrders,
       todaysRevenue,
@@ -130,7 +139,13 @@ async function getDashboardData() {
       pendingOrders,
       mostSoldProducts,
     };
+
+    // 7. Store fetched metrics in Redis cache (expires in 5 minutes / 300 seconds to keep stats fresh)
+    await redis.set(cacheKey, dashboardData, { ex: 300 });
+
+    return dashboardData;
   } catch (error) {
+    console.error("Error fetching dashboard stats from Redis/DB:", error);
     return {
       totalRevenue: 0,
       totalOrders: 0,
@@ -257,7 +272,7 @@ export default async function AdminDashboardPage() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {pendingOrders.map((order) => (
+                  {pendingOrders.map((order: any) => (
                     <div
                       key={order.id}
                       className="flex items-center justify-between border-b pb-3 last:border-0 last:pb-0"

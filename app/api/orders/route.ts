@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from '@/lib/prisma';
+import { redis } from '@/lib/redis'; // Import Redis client
 import { z } from "zod";
-
 
 const phoneRegex = /^01[3-9]\d{8}$/;
 
@@ -159,7 +159,11 @@ export async function POST(req: Request) {
       return order;
     });
 
-    // 5. Send Telegram Notification
+    // 5. Invalidate Redis Caches (Orders list & Admin dashboard metrics)
+    await redis.del("cached_orders");
+    await redis.del("admin_dashboard_stats");
+
+    // 6. Send Telegram Notification
     await sendTelegramNotification({
       orderNumber: newOrder.orderNumber,
       customerName: newOrder.customerName,
@@ -170,12 +174,12 @@ export async function POST(req: Request) {
       quantity: data.quantity,
       totalAmount: newOrder.totalAmount,
       shippingCost: newOrder.shippingCost,
-      paymentMethod: newOrder.paymentMethod,
+      paymentMethod: data.paymentMethod,
       senderNumber: newOrder.senderNumber,
       trxId: newOrder.trxId,
     });
 
-    // 6. Return success response
+    // 7. Return success response
     return NextResponse.json(
       {
         success: true,

@@ -1,6 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import { redis } from "@/lib/redis"; // Import Redis client
 import { revalidatePath } from "next/cache";
 
 type OrderStatus = "PENDING" | "PROCESSING" | "SHIPPED" | "DELIVERED" | "CANCELLED";
@@ -82,7 +83,12 @@ export async function updateOrderStatus(
       },
     });
 
-    // 3. Construct SMS message content
+    // 3. Invalidate Redis Caches (Orders list, Dashboard stats, and Specific Order Detail cache)
+    await redis.del("cached_orders");
+    await redis.del("admin_dashboard_stats");
+    await redis.del(`order_detail_${orderId}`);
+
+    // 4. Construct SMS message content
     const orderRef = order.orderNumber || order.id.slice(-6);
     let smsMessage = "";
 
@@ -103,7 +109,7 @@ export async function updateOrderStatus(
       smsMessage = `Takatak Shop: Order #${orderRef} status is now ${status}. Thank you for shopping with us! Stay connected.`;
     }
 
-    // 4. Send SMS if phone number and credentials are valid
+    // 5. Send SMS if phone number and credentials are valid
     if (order.phone && gatewayUrl && gatewayKey) {
       await sendSmsToCustomer(order.phone, smsMessage, gatewayUrl, gatewayKey);
     }
@@ -111,6 +117,7 @@ export async function updateOrderStatus(
     // Revalidate paths to update UI
     revalidatePath(`/admin/dashboard/orders/${orderId}`);
     revalidatePath("/admin/dashboard/orders");
+    revalidatePath("/admin/dashboard");
 
     return { success: true, message: "Order status updated and SMS sent successfully!" };
   } catch (error) {

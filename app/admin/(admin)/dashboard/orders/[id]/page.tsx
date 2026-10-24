@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import OrderActionButtons from "@/components/admin/OrderActionButtons";
 import { prisma } from "@/lib/prisma";
+import { redis } from "@/lib/redis"; // Import Redis client
 
 
 interface PageProps {
@@ -28,6 +29,36 @@ export const metadata = {
   title: "Order Details",
 };
 
+// Fetch order details using Redis cache with fallback to database
+async function getOrderDetails(orderId: string) {
+  const cacheKey = `order_detail_${orderId}`;
+  try {
+    // 1. Try to fetch order from Redis cache first
+    const cachedOrder: any = await redis.get(cacheKey);
+    if (cachedOrder) {
+      return cachedOrder;
+    }
+
+    // 2. Fetch from Database if cache is empty
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      include: {
+        items: true,
+      },
+    });
+
+    // 3. Save fetched order to Redis cache
+    if (order) {
+      await redis.set(cacheKey, order);
+    }
+
+    return order;
+  } catch (error) {
+    console.error("Error fetching order details from Redis/DB:", error);
+    return null;
+  }
+}
+
 export default async function OrderDetailPage({ params }: PageProps) {
   // Await params to get the id safely in Next.js App Router
   const resolvedParams = await params;
@@ -37,13 +68,8 @@ export default async function OrderDetailPage({ params }: PageProps) {
     notFound();
   }
 
-  // ডাটাবেজ থেকে নির্দিষ্ট অর্ডারের তথ্য ও আইটেম ফেচ করা
-  const order = await prisma.order.findUnique({
-    where: { id: orderId },
-    include: {
-      items: true,
-    },
-  });
+  // Fetch order using Redis/DB helper function
+  const order = await getOrderDetails(orderId);
 
   if (!order) {
     notFound();
@@ -114,7 +140,7 @@ export default async function OrderDetailPage({ params }: PageProps) {
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-5 divide-y">
-                {order.items.map((item) => {
+                {order.items.map((item: any) => {
                   let variant: any = {};
                   try {
                     variant = item.variantInfo ? JSON.parse(item.variantInfo) : {};
@@ -126,8 +152,8 @@ export default async function OrderDetailPage({ params }: PageProps) {
                         <p className="font-semibold text-sm">Product ID: {item.productId}</p>
                         <div className="flex gap-2 text-xs text-muted-foreground mt-1">
                           {variant.color && <span>Color: <strong className="text-foreground">{variant.color}</strong></span>}
-                          {variant.size && <span>• Size: <strong className="text-foreground">{variant.size}</strong></span>}
-                          <span>• Qty: <strong className="text-foreground">{item.quantity}</strong></span>
+                          {variant.size && <span>Size: <strong className="text-foreground">{variant.size}</strong></span>}
+                          <span>Qty: <strong className="text-foreground">{item.quantity}</strong></span>
                         </div>
                       </div>
                       <div className="text-right">
