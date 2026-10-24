@@ -2,6 +2,7 @@
 
 import { v2 as cloudinary } from "cloudinary";
 import { prisma } from "@/lib/prisma";
+import { redis } from "@/lib/redis";
 import { revalidatePath } from "next/cache";
 
 // Configure Cloudinary credentials
@@ -100,6 +101,9 @@ export async function createProduct(formData: FormData) {
         }),
       },
     });
+
+    // 4. Invalidate Redis product cache
+    await redis.del("cached_products");
 
     revalidatePath("/admin/dashboard/products");
 
@@ -213,6 +217,9 @@ export async function updateProduct(formData: FormData) {
       });
     }
 
+    // 5. Invalidate Redis product cache
+    await redis.del("cached_products");
+
     // Revalidate product listing cache
     revalidatePath("/admin/dashboard/products");
 
@@ -244,6 +251,9 @@ export async function deleteProduct(productId: string) {
     await prisma.product.delete({
       where: { id: productId },
     });
+
+    // Invalidate Redis product cache
+    await redis.del("cached_products");
 
     revalidatePath("/admin/dashboard/products");
 

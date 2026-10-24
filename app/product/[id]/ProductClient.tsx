@@ -85,7 +85,6 @@ const orderFormSchema = z.object({
     .string()
     .regex(phoneRegex, "Invalid 11-digit mobile number."),
   customerEmail: z
-    .string()
     .email("Invalid email address.")
     .optional()
     .or(z.literal("")),

@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { prisma } from "@/lib/prisma"; // Direct Prisma import
+import { redis } from "@/lib/redis"; // Import Redis client
 import {
   Banknote,
   Eye,
@@ -69,32 +70,41 @@ const taka = (n?: number | null) => {
 // Revalidate page every 15 minutes (900 seconds) to cache data and reduce DB hits
 export const revalidate = 900;
 
-// Fetch paginated products from database, shuffle the current 16 items, and serialize them
+// Fetch products using Redis cache with fallback to database
 async function getProductsData(page: number) {
   try {
-    const skip = (page - 1) * ITEMS_PER_PAGE;
+    const cacheKey = "cached_products_v2"; // Changed key to avoid old invalid cache
 
-    // Fetch total product count and paginated products concurrently
-    const [totalProducts, products] = await Promise.all([
-      prisma.product.count(),
-      prisma.product.findMany({
-        skip,
-        take: ITEMS_PER_PAGE,
+    // 1. Try to fetch products from Redis cache first
+    let products: any = await redis.get(cacheKey);
+
+    // 2. If cache is empty or not an array, fetch from Database and set to Redis
+    if (!products || !Array.isArray(products) || products.length === 0) {
+      products = await prisma.product.findMany({
         include: {
           images: true,
         },
         orderBy: {
           createdAt: "desc",
         },
-      }),
-    ]);
+      });
 
-    const totalPages = Math.ceil(totalProducts / ITEMS_PER_PAGE);
+      if (products && products.length > 0) {
+        await redis.set(cacheKey, products);
+      }
+    }
 
-    // Randomly shuffle the fetched 16 products for the current page
-    const shuffledProducts = products.sort(() => Math.random() - 0.5);
+    // Ensure products is always an array to prevent .slice() crash
+    const safeProducts = Array.isArray(products) ? products : [];
+    const totalProducts = safeProducts.length;
+    const totalPages = Math.ceil(totalProducts / ITEMS_PER_PAGE) || 1;
 
-    const serializedProducts = shuffledProducts.map((p) => ({
+    // 3. Handle pagination and shuffling on the fetched products array
+    const skip = (page - 1) * ITEMS_PER_PAGE;
+    const paginatedProducts = safeProducts.slice(skip, skip + ITEMS_PER_PAGE);
+    const shuffledProducts = paginatedProducts.sort(() => Math.random() - 0.5);
+
+    const serializedProducts = shuffledProducts.map((p: any) => ({
       ...p,
       price: Number(p.price),
     }));
@@ -105,6 +115,7 @@ async function getProductsData(page: number) {
       currentPage: page,
     };
   } catch (error) {
+    console.error("Error fetching products with Redis/DB:", error);
     return { products: [], totalPages: 1, currentPage: page };
   }
 }

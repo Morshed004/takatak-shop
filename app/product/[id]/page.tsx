@@ -1,6 +1,7 @@
 import { Metadata } from "next";
 import ProductClient from "./ProductClient";
 import { prisma } from "@/lib/prisma";
+import { redis } from "@/lib/redis";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import Link from "next/link";
@@ -13,19 +14,26 @@ interface Props {
 // Revalidate the page every 900 seconds (15 minutes) in the background
 export const revalidate = 900;
 
-// Generate dynamic metadata for SEO and OpenGraph sharing using Prisma directly at build/runtime
+// Generate dynamic metadata for SEO and OpenGraph sharing using Redis/Prisma
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
 
   try {
-    // Fetch product directly from the database to avoid build-time fetch errors
-    const product = await prisma.product.findUnique({
-      where: { id },
-      include: { images: true, variants: true },
-    });
+    const cacheKey = `product_${id}`;
+    let product: any = await redis.get(cacheKey);
+
+    if (!product) {
+      product = await prisma.product.findUnique({
+        where: { id },
+        include: { images: true, variants: true },
+      });
+
+      if (product) {
+        await redis.set(cacheKey, product);
+      }
+    }
 
     if (product) {
-      // Safe check for images array or structure
       const images = product.images;
       const imageUrl = Array.isArray(images) && images.length > 0 ? images[0]?.url || "" : "";
       
@@ -41,7 +49,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       };
     }
   } catch (error) {
-    console.error("Error generating metadata from DB:", error);
+    console.error("Error generating metadata from Redis/DB:", error);
   }
 
   // Fallback metadata if product is not found or an error occurs
@@ -76,16 +84,27 @@ export default async function ProductPage({ params }: Props) {
   );
 }
 
-// Separate asynchronous component to fetch product data and stream it
+// Separate asynchronous component to fetch product data via Redis with DB fallback
 async function ProductDetailSection({ id }: { id: string }) {
-  // Fetch product directly from server to enable ISR caching
-  const product = await prisma.product.findUnique({
-    where: { id },
-    include: {
-      images: true,
-      variants: true,
-    },
-  });
+  const cacheKey = `product_${id}`;
+
+  // 1. Try to fetch product from Redis cache first
+  let product: any = await redis.get(cacheKey);
+
+  // 2. If not found in Redis, fetch from Database and store in Redis
+  if (!product) {
+    product = await prisma.product.findUnique({
+      where: { id },
+      include: {
+        images: true,
+        variants: true,
+      },
+    });
+
+    if (product) {
+      await redis.set(cacheKey, product);
+    }
+  }
 
   // If product doesn't exist, trigger 404
   if (!product) {

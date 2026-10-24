@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { redis } from '@/lib/redis';
 
 export async function GET(request: Request) {
   try {
@@ -18,7 +19,23 @@ export async function GET(request: Request) {
       );
     }
 
-    // 2. Fetch products along with images and variants from the database
+    const cacheKey = "cached_products";
+
+    // 2. Check if products exist in Redis cache
+    const cachedProducts = await redis.get(cacheKey);
+    if (cachedProducts) {
+      return NextResponse.json(
+        { 
+          success: true, 
+          source: "redis",
+          count: (cachedProducts as any).length,
+          data: cachedProducts 
+        }, 
+        { status: 200 }
+      );
+    }
+
+    // 3. Fetch products along with images and variants from the database
     const products = await prisma.product.findMany({
       include: {
         images: true,
@@ -29,10 +46,14 @@ export async function GET(request: Request) {
       },
     });
 
-    // 3. Return successful response
+    // 4. Store fetched products in Redis cache
+    await redis.set(cacheKey, products);
+
+    // 5. Return successful response from database
     return NextResponse.json(
       { 
         success: true, 
+        source: "database",
         count: products.length,
         data: products 
       }, 
