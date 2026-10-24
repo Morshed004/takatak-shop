@@ -14,13 +14,14 @@ const font = Noto_Sans_Bengali({
 
 export const metadata: Metadata = {
   title: {
-    default: "Takatak - Modern E-Commerce Platform",
+    default: "Takatak Shop",
     template: "%s | Takatak",
   },
   description:
-    "Takatak - Online shopping e cash on delivery ebong fast delivery service. Advance delivery charge diye order confirm korun ebong delivery man er samne product check kore nin.",
+    "Takatak - Shop online with Cash on Delivery and fast delivery service. Confirm your order by paying an advance delivery charge and check your product in front of the delivery person.",
   keywords: [
     "Takatak",
+    "Takatak Shop",
     "E-commerce",
     "Online Shopping Bangladesh",
     "Cash on Delivery",
@@ -36,9 +37,9 @@ export const metadata: Metadata = {
     canonical: "/",
   },
   openGraph: {
-    title: "Takatak - Modern E-Commerce Platform",
+    title: "Takatak Shop",
     description:
-      "Takatak e Cash on Delivery te shopping করুন। Delivery man er samne product check korar subidha.",
+      "Shop at Takatak with Cash on Delivery. Enjoy the convenience of checking your product in front of the delivery person.",
     url: "https://takatak.shop",
     siteName: "Takatak",
     images: [
@@ -54,9 +55,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Takatak - Modern E-Commerce Platform",
+    title: "Takatak Shop",
     description:
-      "Takatak e Cash on Delivery te shopping করুন। Advance delivery charge system ebong easy return option.",
+      "Shop at Takatak with Cash on Delivery, an advance delivery charge system, and an easy return option.",
     images: ["/og-image.webp"],
   },
   robots: {
@@ -72,7 +73,11 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html
       lang="en"
