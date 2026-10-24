@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import NextImage from "next/image";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Upload, X, Save, Trash2 } from "lucide-react";
+import { ArrowLeft, Upload, X, Save, Trash2, ArrowRight } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,6 +40,10 @@ type Product = {
   variants: ProductVariant[];
 };
 
+type ImageItem =
+  | { type: "existing"; id: string; url: string }
+  | { type: "new"; file: File; url: string };
+
 export function ProductUpdateForm({ product }: { product: Product }) {
   const router = useRouter();
   const [title, setTitle] = useState(product?.name || "");
@@ -57,28 +61,55 @@ export function ProductUpdateForm({ product }: { product: Product }) {
   const [colors, setColors] = useState(existingColors);
   const [sizes, setSizes] = useState(existingSizes);
 
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const initialImages = product?.images
-    ? product.images.map((img) => img.url)
-    : [];
-  const [previewUrls, setPreviewUrls] = useState<string[]>(initialImages);
+  // Unified image items state to support reordering both existing and new images together
+  const [imageItems, setImageItems] = useState<ImageItem[]>(
+    product?.images
+      ? product.images.map((img) => ({
+          type: "existing" as const,
+          id: img.id,
+          url: img.url,
+        }))
+      : [],
+  );
+
+  const [deletedImageIds, setDeletedImageIds] = useState<string[]>([]);
 
   const [isPending, startTransition] = useTransition();
   const [isDeleting, setIsDeleting] = useState(false);
 
+  // Handle image selection & preview
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const filesArray = Array.from(e.target.files);
-      setSelectedFiles((prev) => [...prev, ...filesArray]);
-
-      const newPreviews = filesArray.map((file) => URL.createObjectURL(file));
-      setPreviewUrls((prev) => [...prev, ...newPreviews]);
+      const newItems: ImageItem[] = filesArray.map((file) => ({
+        type: "new",
+        file,
+        url: URL.createObjectURL(file),
+      }));
+      setImageItems((prev) => [...prev, ...newItems]);
     }
   };
 
+  // Remove specific image (tracks deleted existing images for Cloudinary deletion)
   const handleRemoveImage = (index: number) => {
-    setPreviewUrls((prev) => prev.filter((_, i) => i !== index));
-    setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
+    const item = imageItems[index];
+    if (item.type === "existing") {
+      setDeletedImageIds((prev) => [...prev, item.id]);
+    } else {
+      URL.revokeObjectURL(item.url);
+    }
+    setImageItems((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  // Move Image Position (Reorder)
+  const moveImage = (index: number, direction: "left" | "right") => {
+    const targetIndex = direction === "left" ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= imageItems.length) return;
+
+    const updated = [...imageItems];
+    const [moved] = updated.splice(index, 1);
+    updated.splice(targetIndex, 0, moved);
+    setImageItems(updated);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -92,16 +123,29 @@ export function ProductUpdateForm({ product }: { product: Product }) {
     formData.append("colors", colors);
     formData.append("sizes", sizes);
 
-    selectedFiles.forEach((file) => {
-      formData.append("images", file);
-    });
+    // Send deleted image IDs so the backend can delete them from Cloudinary and database
+    formData.append("deletedImageIds", JSON.stringify(deletedImageIds));
+
+    // Send existing images order
+    const existingIdsOrder = imageItems
+      .filter((item): item is Extract<ImageItem, { type: "existing" }> => item.type === "existing")
+      .map((item) => item.id);
+    formData.append("existingImageIdsOrder", JSON.stringify(existingIdsOrder));
+
+    // Send new files
+    imageItems
+      .filter((item): item is Extract<ImageItem, { type: "new" }> => item.type === "new")
+      .forEach((item) => {
+        formData.append("images", item.file);
+      });
 
     startTransition(async () => {
       const res = await updateProduct(formData);
       if (res?.success) {
         toast.success(res.message);
+        router.refresh();
       } else {
-        toast.error("Error: " + (res?.message || "আপডেট করা সম্ভব হয়নি।"));
+        toast.error("Error: " + (res?.message || "আপডেট করা সম্ভব হয়নি।"));
       }
     });
   };
@@ -200,34 +244,68 @@ export function ProductUpdateForm({ product }: { product: Product }) {
           <Card>
             <CardHeader>
               <CardTitle className="text-base font-semibold">
-                ছবি আপলোড (Images)
+                ছবি আপলোড ও সাজানো (Images & Reordering)
               </CardTitle>
               <CardDescription className="text-xs">
-                নতুন ছবি যুক্ত করলে তা Cloudinary-তে আপলোড হবে।
+                ছবিগুলোর পজিশন পরিবর্তন করতে পারেন এবং মুছে ফেলা ছবি Cloudinary থেকে রিমুভ হবে।
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {previewUrls.length > 0 && (
-                <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
-                  {previewUrls.map((url, idx) => (
+              {imageItems.length > 0 && (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                  {imageItems.map((item, index) => (
                     <div
-                      key={idx}
-                      className="group relative aspect-square overflow-hidden rounded-lg border bg-muted"
+                      key={index}
+                      className="relative group aspect-square overflow-hidden rounded-lg border bg-muted"
                     >
                       <NextImage
-                        src={url}
-                        alt="Product Preview"
+                        src={item.url}
+                        alt={`Product Preview ${index + 1}`}
                         fill
                         sizes="(max-width: 768px) 33vw, 25vw"
                         className="object-cover"
                       />
+
+                      {/* Cover Badge */}
+                      {index === 0 && (
+                        <span className="absolute top-1 left-1 bg-primary text-primary-foreground text-[10px] font-semibold px-2 py-0.5 rounded z-10">
+                          Cover
+                        </span>
+                      )}
+
+                      {/* Remove Button */}
                       <button
                         type="button"
-                        onClick={() => handleRemoveImage(idx)}
-                        className="absolute right-1 top-1 flex size-6 items-center justify-center rounded-full bg-background/80 text-foreground hover:bg-destructive hover:text-white transition"
+                        onClick={() => handleRemoveImage(index)}
+                        className="absolute right-1 top-1 flex size-6 items-center justify-center rounded-full bg-background/80 text-foreground hover:bg-destructive hover:text-white transition z-10"
                       >
                         <X className="size-3.5" />
                       </button>
+
+                      {/* Reorder Controls */}
+                      <div className="absolute bottom-1 left-1 right-1 flex justify-between gap-1 opacity-90 group-hover:opacity-100 transition-opacity bg-black/40 backdrop-blur-xs p-1 rounded z-10">
+                        <button
+                          type="button"
+                          onClick={() => moveImage(index, "left")}
+                          disabled={index === 0}
+                          className="bg-background/80 text-foreground rounded p-1 text-xs disabled:opacity-30 disabled:cursor-not-allowed hover:bg-background"
+                          title="Move left"
+                        >
+                          <ArrowLeft className="w-3.5 h-3.5" />
+                        </button>
+                        <span className="text-[10px] text-white self-center font-medium">
+                          {index + 1}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => moveImage(index, "right")}
+                          disabled={index === imageItems.length - 1}
+                          className="bg-background/80 text-foreground rounded p-1 text-xs disabled:opacity-30 disabled:cursor-not-allowed hover:bg-background"
+                          title="Move right"
+                        >
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -279,7 +357,7 @@ export function ProductUpdateForm({ product }: { product: Product }) {
                 ভ্যারিয়েন্ট (Variants Options)
               </CardTitle>
               <CardDescription className="text-xs">
-                কমা (,) দিয়ে আলাদা করে একাধিক অপশন লিখুন।
+                কমা (,) দিয়ে আলাদা করে একাধিক অপশন লিখুন।
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -289,6 +367,7 @@ export function ProductUpdateForm({ product }: { product: Product }) {
                 </Label>
                 <Input
                   id="colors"
+                  type="text"
                   placeholder="Black, White, Blue"
                   value={colors}
                   onChange={(e) => setColors(e.target.value)}
@@ -302,6 +381,7 @@ export function ProductUpdateForm({ product }: { product: Product }) {
                 </Label>
                 <Input
                   id="sizes"
+                  type="text"
                   placeholder="M, L, XL, XXL"
                   value={sizes}
                   onChange={(e) => setSizes(e.target.value)}

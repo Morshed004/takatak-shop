@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { X, Upload, Loader2 } from "lucide-react";
+import { X, Upload, Loader2, ArrowLeft, ArrowRight } from "lucide-react";
 import { createProduct } from "@/app/actions/product"; // Import Server Action
 import { toast } from "sonner";
 
@@ -37,8 +37,30 @@ export default function AddProductPage() {
 
   // Remove specific image
   const handleRemoveImage = (index: number) => {
+    // Revoke object URL to prevent memory leaks
+    URL.revokeObjectURL(imagePreviews[index]);
+
     setImages((prev) => prev.filter((_, i) => i !== index));
     setImagePreviews((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  // Move Image Position (Reorder)
+  const moveImage = (index: number, direction: "left" | "right") => {
+    const targetIndex = direction === "left" ? index - 1 : index + 1;
+
+    if (targetIndex < 0 || targetIndex >= images.length) return;
+
+    // Swap Files
+    const updatedImages = [...images];
+    const [movedFile] = updatedImages.splice(index, 1);
+    updatedImages.splice(targetIndex, 0, movedFile);
+    setImages(updatedImages);
+
+    // Swap Previews
+    const updatedPreviews = [...imagePreviews];
+    const [movedPreview] = updatedPreviews.splice(index, 1);
+    updatedPreviews.splice(targetIndex, 0, movedPreview);
+    setImagePreviews(updatedPreviews);
   };
 
   // Handle form submission via Server Action
@@ -54,6 +76,7 @@ export default function AddProductPage() {
       formData.append("colors", colors);
       formData.append("sizes", sizes);
 
+      // Sequentially append ordered images
       images.forEach((image) => {
         formData.append("images", image);
       });
@@ -65,11 +88,9 @@ export default function AddProductPage() {
         toast.success("Product added successfully!");
         router.push("/admin/dashboard/products");
       } else {
-        // Server Action থেকে আসা নির্দিষ্ট এরর মেসেজ দেখাবে
         toast.error(`Failed: ${result.message}`);
       }
     } catch (error: any) {
-      // নির্দিষ্ট কোড বা টেক্সট এরর দেখাবে
       toast.error(`Error: ${error?.message || "An unexpected error occurred"}`);
     } finally {
       setLoading(false);
@@ -184,26 +205,60 @@ export default function AddProductPage() {
                 </label>
               </div>
 
-              {/* Image Previews Grid */}
+              {/* Image Previews Grid with Reordering */}
               {imagePreviews.length > 0 && (
-                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4 mt-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mt-4">
                   {imagePreviews.map((src, index) => (
                     <div
                       key={index}
-                      className="relative group aspect-square rounded-md overflow-hidden border"
+                      className="relative group aspect-square rounded-md overflow-hidden border bg-background"
                     >
                       <img
                         src={src}
-                        alt="Preview"
+                        alt={`Preview ${index + 1}`}
                         className="w-full h-full object-cover"
                       />
+
+                      {/* Main Image Badge */}
+                      {index === 0 && (
+                        <span className="absolute top-1 left-1 bg-primary text-primary-foreground text-[10px] font-semibold px-2 py-0.5 rounded">
+                          Cover
+                        </span>
+                      )}
+
+                      {/* Remove Button */}
                       <button
                         type="button"
                         onClick={() => handleRemoveImage(index)}
-                        className="absolute top-1 right-1 bg-red-600 text-white rounded-full p-1 opacity-80 group-hover:opacity-100 transition-opacity"
+                        className="absolute top-1 right-1 bg-red-600 text-white rounded-full p-1 opacity-80 group-hover:opacity-100 transition-opacity z-10"
                       >
                         <X className="w-4 h-4" />
                       </button>
+
+                      {/* Reorder Buttons Controls */}
+                      <div className="absolute bottom-1 left-1 right-1 flex justify-between gap-1 opacity-90 group-hover:opacity-100 transition-opacity bg-black/40 backdrop-blur-xs p-1 rounded">
+                        <button
+                          type="button"
+                          onClick={() => moveImage(index, "left")}
+                          disabled={index === 0}
+                          className="bg-background/80 text-foreground rounded p-1 text-xs disabled:opacity-30 disabled:cursor-not-allowed hover:bg-background"
+                          title="Move left"
+                        >
+                          <ArrowLeft className="w-3.5 h-3.5" />
+                        </button>
+                        <span className="text-[10px] text-white self-center font-medium">
+                          {index + 1}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => moveImage(index, "right")}
+                          disabled={index === imagePreviews.length - 1}
+                          className="bg-background/80 text-foreground rounded p-1 text-xs disabled:opacity-30 disabled:cursor-not-allowed hover:bg-background"
+                          title="Move right"
+                        >
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>

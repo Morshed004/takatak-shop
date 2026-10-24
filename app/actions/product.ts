@@ -1,250 +1,168 @@
-'use server';
+"use server";
 
-import { prisma } from '@/lib/prisma';
-import { v2 as cloudinary } from 'cloudinary';
-import { revalidatePath } from 'next/cache';
+import { v2 as cloudinary } from "cloudinary";
+import { prisma } from "@/lib/prisma";
+import { revalidatePath } from "next/cache";
 
-// Configure Cloudinary using server environment variables
+// Configure Cloudinary credentials
 cloudinary.config({
-  cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-// Helper function to extract Cloudinary Public ID from Image URL
-function getPublicIdFromUrl(url: string) {
-  try {
-    const parts = url.split('/');
-    const uploadIndex = parts.indexOf('upload');
-    if (uploadIndex === -1) return null;
+// Helper function to upload buffer to Cloudinary
+async function uploadToCloudinary(file: File): Promise<{ url: string; publicId: string }> {
+  const arrayBuffer = await file.arrayBuffer();
+  const buffer = Buffer.from(arrayBuffer);
 
-    const pathParts = parts.slice(uploadIndex + 1);
-    if (pathParts[0].startsWith('v')) {
-      pathParts.shift();
-    }
-
-    const fullPath = pathParts.join('/');
-    const publicId = fullPath.substring(0, fullPath.lastIndexOf('.'));
-    return publicId;
-  } catch (error) {
-    return null;
-  }
-}
-
-interface VariantPayload {
-  color: string | null;
-  size: string | null;
-  inStock?: boolean;
-}
-
-// ---------------- Create Product Action ----------------
-export async function createProduct(formData: FormData) {
-  try {
-    const title = formData.get('title') as string;
-    const description = formData.get('description') as string;
-    const price = parseFloat(formData.get('price') as string);
-    const colors = formData.get('colors') as string;
-    const sizes = formData.get('sizes') as string;
-    const imageFiles = formData.getAll('images') as File[];
-
-    if (!title || isNaN(price)) {
-      return { success: false, message: 'Title and valid price are required.' };
-    }
-
-    const uploadedImageUrls: string[] = [];
-
-    for (const file of imageFiles) {
-      if (file.size === 0) continue;
-
-      const bytes = await file.arrayBuffer();
-      const buffer = Buffer.from(bytes);
-
-      const uploadResult: any = await new Promise((resolve, reject) => {
-        const uploadStream = cloudinary.uploader.upload_stream(
-          { folder: 'products' },
-          (error, result) => {
-            if (error) reject(error);
-            else resolve(result);
-          }
-        );
-        uploadStream.end(buffer);
-      });
-
-      if (uploadResult?.secure_url) {
-        uploadedImageUrls.push(uploadResult.secure_url);
-      }
-    }
-
-    const colorArray = colors ? colors.split(',').map((c) => c.trim()).filter(Boolean) : [];
-    const sizeArray = sizes ? sizes.split(',').map((s) => s.trim()).filter(Boolean) : [];
-
-    const variantsData: { color: string; size: string | null }[] = [];
-
-    if (colorArray.length > 0 && sizeArray.length > 0) {
-      for (const color of colorArray) {
-        for (const size of sizeArray) {
-          variantsData.push({ color, size });
+  return new Promise((resolve, reject) => {
+    const uploadStream = cloudinary.uploader.upload_stream(
+      { folder: "products" },
+      (error, result) => {
+        if (error || !result) {
+          reject(error || new Error("Cloudinary upload failed"));
+        } else {
+          resolve({
+            url: result.secure_url,
+            publicId: result.public_id,
+          });
         }
       }
-    } else if (colorArray.length > 0) {
-      colorArray.forEach((color) => variantsData.push({ color, size: null }));
-    } else if (sizeArray.length > 0) {
-      sizeArray.forEach((size) => variantsData.push({ color: 'Default', size }));
+    );
+    uploadStream.end(buffer);
+  });
+}
+
+// Update Product Server Action
+export async function updateProduct(formData: FormData) {
+  try {
+    const productId = formData.get("id") as string;
+    const title = formData.get("title") as string;
+    const description = formData.get("description") as string;
+    const price = Number(formData.get("price"));
+    const colorsStr = formData.get("colors") as string;
+    const sizesStr = formData.get("sizes") as string;
+
+    // Parse deleted image IDs sent from frontend
+    const deletedImageIdsJson = formData.get("deletedImageIds") as string;
+    const deletedImageIds: string[] = deletedImageIdsJson ? JSON.parse(deletedImageIdsJson) : [];
+
+    // Parse new files uploaded from frontend
+    const newFiles = formData.getAll("images") as File[];
+
+    // 1. Delete removed images from Cloudinary and Database
+    if (deletedImageIds.length > 0) {
+      const imagesToDelete = await prisma.productImage.findMany({
+        where: { id: { in: deletedImageIds } },
+      });
+
+      for (const img of imagesToDelete) {
+        if (img.publicId) {
+          await cloudinary.uploader.destroy(img.publicId);
+        }
+      }
+
+      await prisma.productImage.deleteMany({
+        where: { id: { in: deletedImageIds } },
+      });
     }
 
-    const newProduct = await prisma.product.create({
+    // 2. Upload new images to Cloudinary and insert into database
+    const newUploadedImages = [];
+    for (const file of newFiles) {
+      if (file && file.size > 0) {
+        const uploaded = await uploadToCloudinary(file);
+        newUploadedImages.push({
+          url: uploaded.url,
+          publicId: uploaded.publicId,
+          productId,
+        });
+      }
+    }
+
+    if (newUploadedImages.length > 0) {
+      await prisma.productImage.createMany({
+        data: newUploadedImages,
+      });
+    }
+
+    // 3. Update main product details (title, description, price)
+    await prisma.product.update({
+      where: { id: productId },
       data: {
         name: title,
         description,
         price,
-        images: {
-          create: uploadedImageUrls.map((url) => ({ url })),
-        },
-        variants: {
-          create: variantsData.length > 0 ? variantsData : [{ color: 'Default', size: null }],
-        },
       },
     });
 
-    revalidatePath('/products');
-    revalidatePath('/admin/dashboard/products');
-
-    return { 
-      success: true, 
-      message: 'Product created successfully!', 
-      data: newProduct 
-    };
-
-  } catch (error: any) {
-    return { 
-      success: false, 
-      message: error.message || 'Internal Server Error' 
-    };
-  }
-}
-
-// ---------------- Update Product Action ----------------
-export async function updateProduct(formData: FormData) {
-  try {
-    const id = formData.get("id") as string;
-    const title = formData.get("title") as string;
-    const description = formData.get("description") as string;
-    const price = parseFloat(formData.get("price") as string);
-    const colorsStr = (formData.get("colors") as string) || "";
-    const sizesStr = (formData.get("sizes") as string) || "";
-    const newFiles = formData.getAll("images") as File[];
-
-    if (!id) return { success: false, message: "Product ID is missing." };
-
-    const newUploadedImageUrls: string[] = [];
-    for (const file of newFiles) {
-      if (file.size > 0 && file.name) {
-        const arrayBuffer = await file.arrayBuffer();
-        const buffer = Buffer.from(arrayBuffer);
-
-        const uploadResult = await new Promise<{ secure_url: string }>((resolve, reject) => {
-          cloudinary.uploader.upload_stream(
-            { folder: "products" },
-            (error, result) => {
-              if (error || !result) reject(error);
-              else resolve(result);
-            }
-          ).end(buffer);
-        });
-
-        if (uploadResult?.secure_url) {
-          newUploadedImageUrls.push(uploadResult.secure_url);
-        }
-      }
-    }
-
-    const colors = colorsStr.split(",").map((c) => c.trim()).filter(Boolean);
-    const sizes = sizesStr.split(",").map((s) => s.trim()).filter(Boolean);
-
-    const newVariants: VariantPayload[] = [];
-    if (colors.length > 0 || sizes.length > 0) {
-      const colorList = colors.length > 0 ? colors : [null];
-      const sizeList = sizes.length > 0 ? sizes : [null];
-
-      for (const color of colorList) {
-        for (const size of sizeList) {
-          newVariants.push({ color, size, inStock: true });
-        }
-      }
-    }
-
-    // Database Update using Prisma Transaction matching your schema (`productVariant`)
-    await prisma.$transaction(async (tx) => {
-      // 1. Update main product details
-      await tx.product.update({
-        where: { id },
-        data: {
-          name: title,
-          description,
-          price,
-        },
-      });
-
-      // 2. Add new images if uploaded
-      if (newUploadedImageUrls.length > 0) {
-        await tx.productImage.createMany({
-          data: newUploadedImageUrls.map((url) => ({
-            url,
-            productId: id,
-          })),
-        });
-      }
-
-      // 3. Update variants using `tx.productVariant` (matched with your schema model name)
-      if (newVariants.length > 0) {
-        await tx.productVariant.deleteMany({ where: { productId: id } });
-        await tx.productVariant.createMany({
-          data: newVariants.map((v) => ({
-            color: v.color,
-            size: v.size,
-            inStock: v.inStock ?? true,
-            productId: id,
-          })),
-        });
-      }
+    // 4. Update product variants (colors and sizes)
+    await prisma.productVariant.deleteMany({
+      where: { productId },
     });
 
-    revalidatePath("admin/dashboard/products");
-    revalidatePath(`admin/dashboard/products/edit/${id}`);
-    revalidatePath(`/product/${id}`);
+    const colors = colorsStr ? colorsStr.split(",").map((c) => c.trim()).filter(Boolean) : [];
+    const sizes = sizesStr ? sizesStr.split(",").map((s) => s.trim()).filter(Boolean) : [];
 
-    return { success: true, message: "প্রোডাক্ট সফলভাবে আপডেট হয়েছে!" };
+    const variantData = [];
+    if (colors.length > 0 && sizes.length > 0) {
+      for (const color of colors) {
+        for (const size of sizes) {
+          variantData.push({ productId, color, size });
+        }
+      }
+    } else if (colors.length > 0) {
+      for (const color of colors) {
+        variantData.push({ productId, color });
+      }
+    } else if (sizes.length > 0) {
+      for (const size of sizes) {
+        variantData.push({ productId, size });
+      }
+    }
+
+    if (variantData.length > 0) {
+      await prisma.productVariant.createMany({
+        data: variantData,
+      });
+    }
+
+    // Revalidate product listing cache
+    revalidatePath("/admin/dashboard/products");
+
+    return { success: true, message: "Product updated successfully!" };
   } catch (error: any) {
-    return { success: false, message: error.message || "আপডেট ব্যর্থ হয়েছে।" };
+    console.error("Error updating product:", error);
+    return { success: false, message: error.message || "An unexpected error occurred." };
   }
 }
 
-// ---------------- Delete Product Action (With Cloudinary Deletion) ----------------
+// Delete Product Server Action (Cleans up all images from Cloudinary and DB)
 export async function deleteProduct(productId: string) {
   try {
-    if (!productId) return { success: false, message: "Invalid product ID" };
-
-    const product = await prisma.product.findUnique({
-      where: { id: productId },
-      include: { images: true },
+    // Fetch all images linked to this product
+    const images = await prisma.productImage.findMany({
+      where: { productId },
     });
 
-    if (!product) return { success: false, message: "Product not found" };
-
-    for (const img of product.images) {
-      const publicId = getPublicIdFromUrl(img.url);
-      if (publicId) {
-        await cloudinary.uploader.destroy(publicId);
+    // Delete each image from Cloudinary
+    for (const img of images) {
+      if (img.publicId) {
+        await cloudinary.uploader.destroy(img.publicId);
       }
     }
 
+    // Delete product from database (Cascade will handle images and variants)
     await prisma.product.delete({
       where: { id: productId },
     });
 
     revalidatePath("/admin/dashboard/products");
-    return { success: true, message: "প্রোডাক্ট এবং ছবি ক্লাউডিনারি থেকে সফলভাবে মুছে ফেলা হয়েছে!" };
+
+    return { success: true, message: "Product and associated images deleted successfully!" };
   } catch (error: any) {
-    return { success: false, message: error.message || "ডিলিট করা সম্ভব হয়নি।" };
+    console.error("Error deleting product:", error);
+    return { success: false, message: error.message || "Failed to delete product." };
   }
 }
