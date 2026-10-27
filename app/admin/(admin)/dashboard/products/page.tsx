@@ -38,7 +38,7 @@ interface PageProps {
 // Function to fetch products from the internal API route using APP_SECRET header
 async function fetchProductsFromApi() {
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL;
     const appSecret = process.env.APP_SECRET || "";
 
     const response = await fetch(`${baseUrl}/api/products`, {

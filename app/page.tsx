@@ -15,7 +15,7 @@ import {
 import Link from "next/link";
 import HeroCarousel from "@/components/HeroCarousel";
 import Image from "next/image";
-import { FaFacebook } from "react-icons/fa";
+import { FaFacebook, FaInstagram } from "react-icons/fa";
 import { Suspense } from "react";
 
 interface ProductImage {
@@ -310,15 +310,30 @@ export default async function HomePage({ searchParams }: PageProps) {
               <p className="text-xs text-muted-foreground mb-2">
                 আমাদের সাথে যুক্ত থাকুন:
               </p>
-              <a
-                href="https://www.facebook.com/profile.php?id=61595063524452"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center justify-center size-10 rounded-xl bg-[#1877F2]/10 text-[#1877F2] hover:bg-[#1877F2] hover:text-white transition-all"
-                aria-label="Facebook Page"
-              >
-                <FaFacebook size={20} />
-              </a>
+              {/* Social Icons Flex Container */}
+              <div className="flex items-center gap-3">
+                {/* Facebook Icon */}
+                <a
+                  href="https://www.facebook.com/profile.php?id=61595063524452"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center size-10 rounded-xl bg-[#1877F2]/10 text-[#1877F2] hover:bg-[#1877F2] hover:text-white transition-all"
+                  aria-label="Facebook Page"
+                >
+                  <FaFacebook size={20} />
+                </a>
+
+                {/* Instagram Icon */}
+                <a
+                  href="https://www.instagram.com/your-instagram-username"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center size-10 rounded-xl bg-[#E4405F]/10 text-[#E4405F] hover:bg-[#E4405F] hover:text-white transition-all"
+                  aria-label="Instagram Page"
+                >
+                  <FaInstagram size={20} />
+                </a>
+              </div>
             </div>
           </div>
         </div>
