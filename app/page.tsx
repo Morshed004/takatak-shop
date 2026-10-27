@@ -325,7 +325,7 @@ export default async function HomePage({ searchParams }: PageProps) {
 
                 {/* Instagram Icon */}
                 <a
-                  href="https://www.instagram.com/your-instagram-username"
+                  href="https://www.instagram.com/takatak_shop/"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center justify-center size-10 rounded-xl bg-[#E4405F]/10 text-[#E4405F] hover:bg-[#E4405F] hover:text-white transition-all"
